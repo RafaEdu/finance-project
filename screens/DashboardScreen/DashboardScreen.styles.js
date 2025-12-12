@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa", // Fundo levemente cinza
+    backgroundColor: "#f5f5f5",
   },
   loadingContainer: {
     flex: 1,
@@ -25,11 +25,57 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  // Card de Saldo
+  // --- Filtros (Dia | Mês | Ano) ---
+  filterContainer: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 15,
+    padding: 4,
+    justifyContent: "space-between",
+  },
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 6,
+  },
+  activeFilterButton: {
+    backgroundColor: "#0000ff",
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  activeFilterText: {
+    color: "#fff",
+  },
+
+  // --- Navegação de Data (< Data >) ---
+  dateNavContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 12,
+  },
+  dateNavText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  dateNavButton: {
+    padding: 5,
+  },
+
+  // --- Cards de Saldo ---
   balanceCard: {
     backgroundColor: "#0000ff",
     borderRadius: 16,
-    padding: 24,
+    padding: 20,
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -40,16 +86,25 @@ export const styles = StyleSheet.create({
   },
   balanceLabel: {
     color: "rgba(255,255,255,0.8)",
-    fontSize: 16,
-    marginBottom: 8,
+    fontSize: 14,
+    marginBottom: 5,
+    textTransform: "uppercase",
   },
   balanceValue: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "bold",
   },
+  secondaryBalanceContainer: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+    width: "100%",
+    alignItems: "center",
+  },
 
-  // Resumo (Cards lado a lado)
+  // --- Resumo Receitas vs Despesas ---
   summaryContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -62,7 +117,6 @@ export const styles = StyleSheet.create({
     padding: 16,
     justifyContent: "center",
     alignItems: "flex-start",
-    // Sombra suave
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -87,7 +141,7 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  // Lista de Transações
+  // --- Lista ---
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
