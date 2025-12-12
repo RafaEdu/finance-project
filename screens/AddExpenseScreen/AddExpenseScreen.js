@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-// Importar supabase futuramente para salvar
+import { styles } from "./AddExpenseScreen.style";
 
 export default function AddExpenseScreen() {
   const [description, setDescription] = useState("");
@@ -45,22 +45,3 @@ export default function AddExpenseScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  label: { fontSize: 16, marginBottom: 5, fontWeight: "500" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-    fontSize: 16,
-  },
-});

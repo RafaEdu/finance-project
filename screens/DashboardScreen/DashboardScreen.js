@@ -1,9 +1,11 @@
 import React, { useLayoutEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { useAuth } from "../context/AuthContext";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// Recebemos a prop 'navigation' automaticamente
+import { useAuth } from "../context/AuthContext";
+
+import { styles } from "./DashboardScreen.styles";
+
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
 
@@ -12,7 +14,7 @@ export default function DashboardScreen({ navigation }) {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
-          style={{ marginRight: 15 }} // Margem para não colar na borda
+          style={styles.profileIcon} // Usando o estilo importado
           onPress={() => navigation.navigate("Profile")}
         >
           <Ionicons name="person-circle-outline" size={30} color="#0000ff" />
@@ -40,25 +42,3 @@ export default function DashboardScreen({ navigation }) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 5,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  content: { flex: 1, justifyContent: "center", alignItems: "center" },
-  infoText: { fontSize: 18, color: "#888" },
-});
