@@ -1,7 +1,10 @@
--- =========================================================
--- CRIAÇÃO DAS PRIMEIRAS TABELAS
--- =========================================================
+### =========================================================
 
+### CRIAÇÃO DAS PRIMEIRAS TABELAS
+
+### =========================================================
+
+```sql
 -- 1. Tabela de Categorias de Receita
 create table public.categoria_receita (
 id uuid not null default gen_random_uuid(),
@@ -61,20 +64,28 @@ create index idx_receita_user on public.receita(user_id);
 create index idx_despesa_user on public.despesa(user_id);
 create index idx_receita_data on public.receita(data_transacao);
 create index idx_despesa_data on public.despesa(data_transacao);
+```
 
--- =========================================================
--- HABILITAR RLS (Segurança a nível de linha)
--- =========================================================
+### =========================================================
 
+### HABILITAR RLS (Segurança a nível de linha)
+
+### =========================================================
+
+```sql
 alter table public.categoria_receita enable row level security;
 alter table public.categoria_despesa enable row level security;
 alter table public.receita enable row level security;
 alter table public.despesa enable row level security;
+```
 
--- =========================================================
--- POLÍTICAS PARA CATEGORIA_RECEITA
--- =========================================================
+### =========================================================
 
+### POLÍTICAS PARA CATEGORIA_RECEITA
+
+### =========================================================
+
+```sql
 -- Permitir SELECT apenas dos seus dados
 create policy "Usuários podem ver suas próprias categorias de receita"
 on public.categoria_receita for select
@@ -94,11 +105,15 @@ using (auth.uid() = user_id);
 create policy "Usuários podem deletar suas categorias de receita"
 on public.categoria_receita for delete
 using (auth.uid() = user_id);
+```
 
--- =========================================================
--- POLÍTICAS PARA CATEGORIA_DESPESA
--- =========================================================
+### =========================================================
 
+### POLÍTICAS PARA CATEGORIA_DESPESA
+
+### =========================================================
+
+```sql
 create policy "Usuários podem ver suas próprias categorias de despesa"
 on public.categoria_despesa for select using (auth.uid() = user_id);
 
@@ -110,11 +125,15 @@ on public.categoria_despesa for update using (auth.uid() = user_id);
 
 create policy "Usuários podem deletar suas categorias de despesa"
 on public.categoria_despesa for delete using (auth.uid() = user_id);
+```
 
--- =========================================================
--- POLÍTICAS PARA RECEITA
--- =========================================================
+### =========================================================
 
+### POLÍTICAS PARA RECEITA
+
+### =========================================================
+
+```sql
 create policy "Usuários podem ver suas próprias receitas"
 on public.receita for select using (auth.uid() = user_id);
 
@@ -126,11 +145,15 @@ on public.receita for update using (auth.uid() = user_id);
 
 create policy "Usuários podem deletar suas receitas"
 on public.receita for delete using (auth.uid() = user_id);
+```
 
--- =========================================================
--- POLÍTICAS PARA DESPESA
--- =========================================================
+### =========================================================
 
+### POLÍTICAS PARA DESPESA
+
+### =========================================================
+
+```sql
 create policy "Usuários podem ver suas próprias despesas"
 on public.despesa for select using (auth.uid() = user_id);
 
@@ -142,3 +165,5 @@ on public.despesa for update using (auth.uid() = user_id);
 
 create policy "Usuários podem deletar suas despesas"
 on public.despesa for delete using (auth.uid() = user_id);
+
+```
