@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  // --- Filtros (Dia | Mês | Ano) ---
+  // --- Filtros ---
   filterContainer: {
     flexDirection: "row",
     backgroundColor: "#fff",
@@ -52,7 +52,7 @@ export const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // --- Navegação de Data (< Data >) ---
+  // --- Navegação de Data ---
   dateNavContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -104,7 +104,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // --- Resumo Receitas vs Despesas ---
+  // --- Resumo ---
   summaryContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -186,6 +186,16 @@ export const styles = StyleSheet.create({
   transactionValue: {
     fontSize: 16,
     fontWeight: "bold",
+    marginRight: 10,
+  },
+  // Novos estilos para os botões de ação
+  actionsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  actionButton: {
+    padding: 8,
+    marginLeft: 5,
   },
   emptyState: {
     padding: 20,

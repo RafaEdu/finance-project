@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useLayoutEffect,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useLayoutEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Platform,
+  Alert,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +19,6 @@ import { styles } from "./DashboardScreen.styles";
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
 
-  // Estados de Carregamento
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -36,10 +31,10 @@ export default function DashboardScreen({ navigation }) {
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
   const [balance, setBalance] = useState(0);
-  const [monthToDateBalance, setMonthToDateBalance] = useState(0); // Saldo acumulado do mês (para filtro 'day')
+  const [monthToDateBalance, setMonthToDateBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
 
-  // Configuração do Header (Botão de Perfil)
+  // Configuração do Header
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -53,7 +48,7 @@ export default function DashboardScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // Função auxiliar para obter o intervalo de datas baseado no filtro
+  // Função auxiliar de datas
   const getDateRange = (date, type) => {
     const start = new Date(date);
     const end = new Date(date);
@@ -64,7 +59,6 @@ export default function DashboardScreen({ navigation }) {
     } else if (type === "month") {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
-      // Último dia do mês
       end.setMonth(end.getMonth() + 1);
       end.setDate(0);
       end.setHours(23, 59, 59, 999);
@@ -78,17 +72,15 @@ export default function DashboardScreen({ navigation }) {
     return {
       startISO: start.toISOString(),
       endISO: end.toISOString(),
-      startObj: start,
-      endObj: end,
     };
   };
 
-  // Busca dados principais (Receitas e Despesas do período selecionado)
+  // Buscar Dados
   const fetchDashboardData = async () => {
     try {
       const { startISO, endISO } = getDateRange(currentDate, filterType);
 
-      // 1. Buscar Receitas do Período
+      // 1. Buscar Receitas
       const { data: incomes, error: incomeError } = await supabase
         .from("receita")
         .select("*")
@@ -99,7 +91,7 @@ export default function DashboardScreen({ navigation }) {
 
       if (incomeError) throw incomeError;
 
-      // 2. Buscar Despesas do Período
+      // 2. Buscar Despesas
       const { data: expenses, error: expenseError } = await supabase
         .from("despesa")
         .select("*")
@@ -110,7 +102,7 @@ export default function DashboardScreen({ navigation }) {
 
       if (expenseError) throw expenseError;
 
-      // 3. Cálculos do Período Selecionado
+      // 3. Cálculos
       const sumIncome = incomes.reduce(
         (acc, curr) => acc + Number(curr.valor),
         0
@@ -124,7 +116,7 @@ export default function DashboardScreen({ navigation }) {
       setTotalExpense(sumExpense);
       setBalance(sumIncome - sumExpense);
 
-      // 4. Lista de Transações (Unir e Ordenar)
+      // 4. Lista Unificada
       const formattedIncomes = incomes.map((i) => ({ ...i, type: "income" }));
       const formattedExpenses = expenses.map((e) => ({
         ...e,
@@ -135,9 +127,10 @@ export default function DashboardScreen({ navigation }) {
       allTransactions.sort(
         (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao)
       );
+
       setTransactions(allTransactions);
 
-      // 5. Lógica Especial para Filtro "Dia": Saldo Acumulado do Mês
+      // 5. Saldo Acumulado (se filtro for dia)
       if (filterType === "day") {
         await fetchMonthToDateBalance(currentDate);
       }
@@ -149,21 +142,17 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  // Função extra para calcular o saldo do mês até a data selecionada
   const fetchMonthToDateBalance = async (selectedDate) => {
-    // Início do mês
     const startOfMonth = new Date(selectedDate);
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    // Final do dia selecionado
     const endOfDay = new Date(selectedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
     const startISO = startOfMonth.toISOString();
     const endISO = endOfDay.toISOString();
 
-    // Receitas Mês até Agora
     const { data: monthIncomes } = await supabase
       .from("receita")
       .select("valor")
@@ -171,7 +160,6 @@ export default function DashboardScreen({ navigation }) {
       .gte("data_transacao", startISO)
       .lte("data_transacao", endISO);
 
-    // Despesas Mês até Agora
     const { data: monthExpenses } = await supabase
       .from("despesa")
       .select("valor")
@@ -191,7 +179,45 @@ export default function DashboardScreen({ navigation }) {
     setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
   };
 
-  // Recarregar quando a tela ganha foco, ou quando filtro/data muda
+  // Funções de Ação (Editar e Excluir)
+  const handleEdit = (item) => {
+    // Determina a tela correta baseada no tipo
+    const screenName = item.type === "income" ? "Nova Receita" : "Nova Despesa";
+    // Navega passando o item inteiro para ser editado
+    navigation.navigate(screenName, { transactionToEdit: item });
+  };
+
+  const handleDelete = (item) => {
+    Alert.alert(
+      "Confirmar Exclusão",
+      `Deseja excluir esta ${item.type === "income" ? "receita" : "despesa"}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            setLoading(true);
+            const tableName = item.type === "income" ? "receita" : "despesa";
+
+            const { error } = await supabase
+              .from(tableName)
+              .delete()
+              .eq("id", item.id);
+
+            if (error) {
+              Alert.alert("Erro", "Não foi possível excluir.");
+            } else {
+              // Recarrega os dados após excluir
+              fetchDashboardData();
+            }
+            setLoading(false);
+          },
+        },
+      ]
+    );
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchDashboardData();
@@ -203,28 +229,20 @@ export default function DashboardScreen({ navigation }) {
     fetchDashboardData();
   };
 
-  // --- Manipulação de Datas ---
-
   const changeDate = (direction) => {
     const newDate = new Date(currentDate);
-    if (filterType === "day") {
-      newDate.setDate(newDate.getDate() + direction);
-    } else if (filterType === "month") {
+    if (filterType === "day") newDate.setDate(newDate.getDate() + direction);
+    else if (filterType === "month")
       newDate.setMonth(newDate.getMonth() + direction);
-    } else if (filterType === "year") {
+    else if (filterType === "year")
       newDate.setFullYear(newDate.getFullYear() + direction);
-    }
     setCurrentDate(newDate);
   };
 
   const handleDatePickerChange = (event, selectedDate) => {
     setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setCurrentDate(selectedDate);
-    }
+    if (selectedDate) setCurrentDate(selectedDate);
   };
-
-  // --- Formatadores ---
 
   const formatCurrency = (value) => {
     return value.toLocaleString("pt-BR", {
@@ -235,21 +253,17 @@ export default function DashboardScreen({ navigation }) {
 
   const formatDisplayDate = () => {
     if (filterType === "day") return currentDate.toLocaleDateString("pt-BR");
-    if (filterType === "month") {
-      // Ex: "dezembro de 2025"
+    if (filterType === "month")
       return currentDate.toLocaleDateString("pt-BR", {
         month: "long",
         year: "numeric",
       });
-    }
     if (filterType === "year") return currentDate.getFullYear().toString();
   };
 
   const formatTransactionDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
-
-  // --- Render ---
 
   if (loading && !refreshing) {
     return (
@@ -276,14 +290,33 @@ export default function DashboardScreen({ navigation }) {
             {formatTransactionDate(item.data_transacao)}
           </Text>
         </View>
-        <Text
-          style={[
-            styles.transactionValue,
-            { color: isIncome ? "#27ae60" : "#e74c3c" },
-          ]}
-        >
-          {isIncome ? "+" : "-"} {formatCurrency(Number(item.valor))}
-        </Text>
+
+        <View style={{ alignItems: "flex-end" }}>
+          <Text
+            style={[
+              styles.transactionValue,
+              { color: isIncome ? "#27ae60" : "#e74c3c" },
+            ]}
+          >
+            {isIncome ? "+" : "-"} {formatCurrency(Number(item.valor))}
+          </Text>
+
+          {/* Botões de Ação */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity
+              onPress={() => handleEdit(item)}
+              style={styles.actionButton}
+            >
+              <Ionicons name="pencil" size={20} color="#f39c12" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleDelete(item)}
+              style={styles.actionButton}
+            >
+              <Ionicons name="trash" size={20} color="#e74c3c" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   };
@@ -298,7 +331,6 @@ export default function DashboardScreen({ navigation }) {
       >
         <Text style={styles.greeting}>Olá, {user?.email?.split("@")[0]}</Text>
 
-        {/* --- Filtros --- */}
         <View style={styles.filterContainer}>
           {["day", "month", "year"].map((type) => (
             <TouchableOpacity
@@ -321,7 +353,6 @@ export default function DashboardScreen({ navigation }) {
           ))}
         </View>
 
-        {/* --- Navegação de Data --- */}
         <View style={styles.dateNavContainer}>
           <TouchableOpacity
             onPress={() => changeDate(-1)}
@@ -329,11 +360,9 @@ export default function DashboardScreen({ navigation }) {
           >
             <Ionicons name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
-
           <TouchableOpacity onPress={() => setShowDatePicker(true)}>
             <Text style={styles.dateNavText}>{formatDisplayDate()}</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => changeDate(1)}
             style={styles.dateNavButton}
@@ -351,14 +380,12 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
-        {/* --- Card de Saldo --- */}
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>
             {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
           </Text>
           <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
 
-          {/* Saldo Secundário para Filtro DIA */}
           {filterType === "day" && (
             <View style={styles.secondaryBalanceContainer}>
               <Text style={styles.balanceLabel}>Saldo do Mês (Acumulado)</Text>
@@ -369,7 +396,6 @@ export default function DashboardScreen({ navigation }) {
           )}
         </View>
 
-        {/* --- Resumo Receitas vs Despesas --- */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, styles.incomeCard]}>
             <Ionicons name="trending-up" size={24} color="#27ae60" />
@@ -387,7 +413,6 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
-        {/* --- Lista de Transações --- */}
         <Text style={styles.sectionTitle}>
           {filterType === "day"
             ? "Movimentações do Dia"
@@ -399,7 +424,7 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.emptyText}>Nenhuma transação encontrada.</Text>
           </View>
         ) : (
-          <View>{transactions.map(renderTransactionItem)}</View>
+          <View>{transactions.map((item) => renderTransactionItem(item))}</View>
         )}
       </ScrollView>
     </View>
