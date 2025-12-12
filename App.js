@@ -10,15 +10,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Telas de Autenticação
-import LoginScreen from "./screens/LoginScreen";
-import RegisterScreen from "./screens/RegisterScreen";
-import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import LoginScreen from "./screens/LoginScreen/LoginScreen.js";
+import RegisterScreen from "./screens/RegisterScreen/RegisterScreen.js";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen/ForgotPasswordScreen.js";
 
 // Telas da Aplicação
-import DashboardScreen from "./screens/DashboardScreen";
-import AddExpenseScreen from "./screens/AddExpenseScreen";
-import AddIncomeScreen from "./screens/AddIncomeScreen";
-import ProfileScreen from "./screens/ProfileScreen";
+import DashboardScreen from "./screens/DashboardScreen/DashboardScreen.js";
+import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen.js";
+import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen.js";
+import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.js";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

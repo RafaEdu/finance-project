@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { styles } from "./AddExpenseScreen.style";
+import { styles } from "./AddExpenseScreen.styles";
 
 export default function AddExpenseScreen() {
   const [description, setDescription] = useState("");

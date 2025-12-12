@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
-import { styles } from "./AddIncomeScreen.style";
+import { styles } from "./AddIncomeScreen.styles";
 
 export default function AddIncomeScreen() {
   const [description, setDescription] = useState("");
