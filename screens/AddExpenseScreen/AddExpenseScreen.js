@@ -1,28 +1,73 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  Alert,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../context/AuthContext";
 import { styles } from "./AddExpenseScreen.styles";
 
-export default function AddExpenseScreen() {
+export default function AddExpenseScreen({ navigation }) {
+  const { user } = useAuth();
   const [description, setDescription] = useState("");
   const [value, setValue] = useState("");
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    // Lógica futura de salvar no Supabase na tabela 'despesa'
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === "ios"); // No iOS mantém aberto, no Android fecha auto
+    setDate(currentDate);
+  };
+
+  const handleSave = async () => {
     if (!description || !value) {
-      Alert.alert("Erro", "Preencha todos os campos");
+      Alert.alert("Erro", "Preencha a descrição e o valor.");
       return;
     }
-    Alert.alert(
-      "Sucesso",
-      `Despesa "${description}" de R$ ${value} salva! (Simulação)`
-    );
-    setDescription("");
-    setValue("");
+
+    setLoading(true);
+
+    // Converte valor para float aceitando vírgula ou ponto
+    const numericValue = parseFloat(value.replace(",", "."));
+
+    if (isNaN(numericValue)) {
+      Alert.alert("Erro", "Valor inválido.");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("despesa").insert({
+      user_id: user.id,
+      descricao: description,
+      valor: numericValue,
+      data_transacao: date.toISOString(), // Envia data selecionada ou atual
+      pago: false, // Default conforme schema
+      // categoria_id: null // Ainda não implementamos seleção de categorias
+    });
+
+    if (error) {
+      Alert.alert("Erro ao salvar", error.message);
+    } else {
+      Alert.alert("Sucesso", "Despesa registrada!");
+      setDescription("");
+      setValue("");
+      setDate(new Date()); // Reseta para hoje
+      navigation.navigate("Dashboard"); // Volta para o dashboard para atualizar
+    }
+    setLoading(false);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, { color: "#e74c3c" }]}>Nova Despesa</Text>
+      <Text style={styles.title}>Nova Despesa</Text>
 
       <Text style={styles.label}>Descrição</Text>
       <TextInput
@@ -41,7 +86,32 @@ export default function AddExpenseScreen() {
         onChangeText={setValue}
       />
 
-      <Button title="Salvar Despesa" color="#e74c3c" onPress={handleSave} />
+      <Text style={styles.label}>Data da Transação</Text>
+      <TouchableOpacity
+        style={styles.dateButton}
+        onPress={() => setShowDatePicker(true)}
+      >
+        <Text style={styles.dateText}>{date.toLocaleDateString("pt-BR")}</Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()} // Opcional: não permitir datas futuras
+        />
+      )}
+
+      <View style={styles.buttonContainer}>
+        <Button
+          title={loading ? "Salvando..." : "Salvar Despesa"}
+          color="#e74c3c"
+          onPress={handleSave}
+          disabled={loading}
+        />
+      </View>
     </View>
   );
 }

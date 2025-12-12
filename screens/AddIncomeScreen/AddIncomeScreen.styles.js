@@ -7,8 +7,9 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+    color: "#27ae60",
   },
-  label: { fontSize: 16, marginBottom: 5, fontWeight: "500" },
+  label: { fontSize: 16, marginBottom: 5, fontWeight: "500", color: "#333" },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -16,5 +17,22 @@ export const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 20,
     fontSize: 16,
+    backgroundColor: "#fafafa",
+  },
+  dateButton: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    marginBottom: 30,
+    backgroundColor: "#fafafa",
+    alignItems: "center",
+  },
+  dateText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  buttonContainer: {
+    marginTop: 10,
   },
 });
