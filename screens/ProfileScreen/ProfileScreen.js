@@ -11,28 +11,23 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
-import { styles } from "./ProfileScreen.styles"; // Certifique-se que o arquivo de estilos existe
+import { styles } from "./ProfileScreen.styles";
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
 
-  // Estado para o Nome (Inicializado com o metadata existente ou vazio)
   const [name, setName] = useState("");
-
-  // Estados para o formulário de senha
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingName, setLoadingName] = useState(false);
 
-  // Carregar o nome atual ao abrir a tela
   useEffect(() => {
     if (user?.user_metadata?.full_name) {
       setName(user.user_metadata.full_name);
     }
   }, [user]);
 
-  // Lógica de Logout
   const handleLogout = () => {
     Alert.alert("Sair da Conta", "Tem certeza que deseja sair?", [
       { text: "Cancelar", style: "cancel" },
@@ -46,29 +41,21 @@ export default function ProfileScreen() {
     ]);
   };
 
-  // --- NOVA FUNÇÃO: Atualizar Nome (Metadata) ---
   const handleUpdateName = async () => {
     if (!name.trim()) {
       Alert.alert("Erro", "O nome não pode estar vazio.");
       return;
     }
-
     setLoadingName(true);
-
-    // Atualiza apenas os metadados, sem mexer em email/senha
     const { error } = await supabase.auth.updateUser({
       data: { full_name: name },
     });
-
-    if (error) {
-      Alert.alert("Erro", error.message);
-    } else {
-      Alert.alert("Sucesso", "Nome atualizado!");
-    }
+    if (error) Alert.alert("Erro", error.message);
+    else Alert.alert("Sucesso", "Nome atualizado!");
     setLoadingName(false);
   };
 
-  // Lógica de Alterar Senha
+  // --- Lógica Ajustada de Alterar Senha ---
   const handleChangePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
@@ -76,22 +63,38 @@ export default function ProfileScreen() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+
+    // Dispara o envio do código de recuperação para o email atual
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+
+    setLoading(false);
 
     if (error) {
-      Alert.alert("Erro ao atualizar", error.message);
+      Alert.alert("Erro ao enviar código", error.message);
     } else {
-      Alert.alert("Sucesso", "Sua senha foi alterada!");
-      setNewPassword("");
+      // Navegação movida para dentro do onPress do Alert para garantir a leitura e o fluxo
+      Alert.alert(
+        "Verificação Enviada",
+        `Um código de 6 dígitos foi enviado para ${user.email}. Digite-o na próxima tela para confirmar a nova senha.`,
+        [
+          {
+            text: "OK, recebi o código",
+            onPress: () => {
+              navigation.navigate("VerifyCode", {
+                email: user.email,
+                type: "recovery",
+                newPassword: newPassword,
+              });
+              setNewPassword(""); // Limpa o campo da senha
+            },
+          },
+        ]
+      );
     }
-    setLoading(false);
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* --- Cabeçalho do Perfil --- */}
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <Ionicons name="person" size={60} color="#fff" />
@@ -99,7 +102,6 @@ export default function ProfileScreen() {
         <Text style={styles.emailText}>{user?.email}</Text>
       </View>
 
-      {/* --- NOVA SEÇÃO: Dados Pessoais --- */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Dados Pessoais</Text>
         <Text style={styles.label}>Nome de Exibição</Text>
@@ -124,7 +126,6 @@ export default function ProfileScreen() {
         />
       </View>
 
-      {/* --- Seção de Segurança --- */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Segurança</Text>
         <Text style={styles.label}>Alterar Senha</Text>
@@ -151,13 +152,12 @@ export default function ProfileScreen() {
         </View>
 
         <Button
-          title={loading ? "Atualizando..." : "Atualizar Senha"}
+          title={loading ? "Enviando código..." : "Atualizar Senha"}
           onPress={handleChangePassword}
           disabled={loading}
         />
       </View>
 
-      {/* --- Botão de Sair --- */}
       <View style={styles.logoutContainer}>
         <Button title="Sair (Logout)" color="#e74c3c" onPress={handleLogout} />
       </View>

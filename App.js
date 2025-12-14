@@ -10,26 +10,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Telas de Autenticação
-import LoginScreen from "./screens/LoginScreen/LoginScreen.js";
-import RegisterScreen from "./screens/RegisterScreen/RegisterScreen.js";
-import ForgotPasswordScreen from "./screens/ForgotPasswordScreen/ForgotPasswordScreen.js";
+import LoginScreen from "./screens/LoginScreen/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen/RegisterScreen";
+import ForgotPasswordScreen from "./screens/ForgotPasswordScreen/ForgotPasswordScreen";
+import VerifyCodeScreen from "./screens/VerifyCodeScreen/VerifyCodeScreen"; // NOVA IMPORTAÇÃO
 
 // Telas da Aplicação
-import DashboardScreen from "./screens/DashboardScreen/DashboardScreen.js";
-import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen.js";
-import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen.js";
-import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.js";
+import DashboardScreen from "./screens/DashboardScreen/DashboardScreen";
+import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen";
+import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen";
+import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// --- Componente da Bottom Bar (Tab Navigator) ---
 function AppTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Dashboard"
       screenOptions={({ route }) => ({
-        headerShown: true, // Cabeçalho das abas
+        headerShown: true,
         tabBarActiveTintColor: "#0000ff",
         tabBarInactiveTintColor: "gray",
         tabBarIcon: ({ focused, color, size }) => {
@@ -66,7 +66,6 @@ function AppTabs() {
   );
 }
 
-// --- Componente de Navegação Principal (Stack) ---
 function Navigation() {
   const { session, loading } = useAuth();
 
@@ -82,30 +81,39 @@ function Navigation() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {session && session.user ? (
-          // Pilha de Autenticado
+          // --- Pilha de Autenticado ---
           <Stack.Group>
-            {/* O AppTabs é a tela principal */}
             <Stack.Screen name="MainTabs" component={AppTabs} />
-
-            {/* O Profile é uma tela extra que fica "em cima" das abas */}
             <Stack.Screen
               name="Profile"
               component={ProfileScreen}
               options={{
                 headerShown: true,
                 title: "Meu Perfil",
-                headerBackTitle: "Voltar", // Texto do botão voltar no iOS
+                headerBackTitle: "Voltar",
               }}
+            />
+            {/* Disponível aqui para a troca de senha */}
+            <Stack.Screen
+              name="VerifyCode"
+              component={VerifyCodeScreen}
+              options={{ headerShown: true, title: "Confirmar Código" }}
             />
           </Stack.Group>
         ) : (
-          // Pilha de Não Autenticado
+          // --- Pilha de Não Autenticado ---
           <Stack.Group>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen
               name="ForgotPassword"
               component={ForgotPasswordScreen}
+            />
+            {/* Disponível aqui para o cadastro */}
+            <Stack.Screen
+              name="VerifyCode"
+              component={VerifyCodeScreen}
+              options={{ headerShown: true, title: "Confirmar Cadastro" }}
             />
           </Stack.Group>
         )}

@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Button,
-  StyleSheet,
   Alert,
   TouchableOpacity,
 } from "react-native";
@@ -18,6 +17,7 @@ export default function RegisterScreen({ navigation }) {
 
   async function signUpWithEmail() {
     setLoading(true);
+    // Tenta cadastrar
     const { data, error } = await supabase.auth.signUp({
       email: email,
       password: password,
@@ -25,9 +25,16 @@ export default function RegisterScreen({ navigation }) {
 
     if (error) {
       Alert.alert("Erro", error.message);
-    } else if (!data.session) {
-      Alert.alert("Sucesso", "Verifique seu email para confirmar o cadastro!");
-      navigation.goBack(); // Volta para o login
+    } else {
+      // Se não houver sessão ativa imediatamente (comum quando requer confirmação),
+      // enviamos para a tela de código.
+      if (!data.session) {
+        Alert.alert("Código Enviado", "Verifique seu e-mail.");
+        navigation.navigate("VerifyCode", {
+          email: email,
+          type: "signup",
+        });
+      }
     }
     setLoading(false);
   }
@@ -53,7 +60,7 @@ export default function RegisterScreen({ navigation }) {
 
       <View style={styles.buttonContainer}>
         <Button
-          title="Cadastrar"
+          title={loading ? "Cadastrando..." : "Cadastrar"}
           disabled={loading}
           onPress={signUpWithEmail}
         />
