@@ -7,6 +7,8 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -25,13 +27,12 @@ export default function AddIncomeScreen({ navigation, route }) {
 
   const transactionToEdit = route.params?.transactionToEdit;
 
-  // useFocusEffect garante que o estado seja resetado ou preenchido corretamente
-  // toda vez que a tela é exibida
   useFocusEffect(
     useCallback(() => {
       if (transactionToEdit) {
         setDescription(transactionToEdit.descricao);
-        setValue(String(transactionToEdit.valor));
+        // Formata o valor existente para visualização
+        setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
       } else {
         setDescription("");
@@ -40,6 +41,18 @@ export default function AddIncomeScreen({ navigation, route }) {
       }
     }, [transactionToEdit])
   );
+
+  // --- Função de Máscara de Moeda ---
+  const handleAmountChange = (text) => {
+    const cleanValue = text.replace(/\D/g, "");
+    if (!cleanValue) {
+      setValue("");
+      return;
+    }
+    const numberValue = Number(cleanValue) / 100;
+    const formattedValue = numberValue.toFixed(2).replace(".", ",");
+    setValue(formattedValue);
+  };
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
@@ -55,7 +68,8 @@ export default function AddIncomeScreen({ navigation, route }) {
 
     setLoading(true);
 
-    const numericValue = parseFloat(value.replace(",", "."));
+    // Converte para float (remove pontos de milhar se houver, troca virgula por ponto)
+    const numericValue = parseFloat(value.replace(/\./g, "").replace(",", "."));
 
     if (isNaN(numericValue)) {
       Alert.alert("Erro", "Valor inválido.");
@@ -98,7 +112,6 @@ export default function AddIncomeScreen({ navigation, route }) {
         transactionToEdit ? "Receita atualizada!" : "Receita registrada!"
       );
 
-      // Limpeza de estado e navegação
       setDescription("");
       setValue("");
       setDate(new Date());
@@ -116,69 +129,74 @@ export default function AddIncomeScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        {transactionToEdit ? "Editar Receita" : "Nova Receita"}
-      </Text>
+    // Wrapper para fechar o teclado
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>
+          {transactionToEdit ? "Editar Receita" : "Nova Receita"}
+        </Text>
 
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: Salário"
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      <Text style={styles.label}>Valor (R$)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="0,00"
-        keyboardType="numeric"
-        value={value}
-        onChangeText={setValue}
-      />
-
-      <Text style={styles.label}>Data da Transação</Text>
-      <TouchableOpacity
-        style={styles.dateButton}
-        onPress={() => setShowDatePicker(true)}
-      >
-        <Text style={styles.dateText}>{date.toLocaleDateString("pt-BR")}</Text>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      )}
-
-      <View style={styles.buttonContainer}>
-        <Button
-          title={
-            loading
-              ? "Salvando..."
-              : transactionToEdit
-              ? "Atualizar"
-              : "Salvar Receita"
-          }
-          color="#27ae60"
-          onPress={handleSave}
-          disabled={loading}
+        <Text style={styles.label}>Descrição</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Salário"
+          value={description}
+          onChangeText={setDescription}
         />
 
-        {transactionToEdit && (
-          <View style={{ marginTop: 10 }}>
-            <Button
-              title="Cancelar Edição"
-              color="gray"
-              onPress={handleCancelEdit}
-            />
-          </View>
+        <Text style={styles.label}>Valor (R$)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="0,00"
+          keyboardType="numeric"
+          value={value}
+          onChangeText={handleAmountChange} // Máscara aplicada aqui
+        />
+
+        <Text style={styles.label}>Data da Transação</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.dateText}>
+            {date.toLocaleDateString("pt-BR")}
+          </Text>
+        </TouchableOpacity>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
         )}
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title={
+              loading
+                ? "Salvando..."
+                : transactionToEdit
+                ? "Atualizar"
+                : "Salvar Receita"
+            }
+            color="#27ae60"
+            onPress={handleSave}
+            disabled={loading}
+          />
+
+          {transactionToEdit && (
+            <View style={{ marginTop: 10 }}>
+              <Button
+                title="Cancelar Edição"
+                color="gray"
+                onPress={handleCancelEdit}
+              />
+            </View>
+          )}
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }

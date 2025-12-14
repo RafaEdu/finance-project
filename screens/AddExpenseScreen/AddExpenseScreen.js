@@ -7,6 +7,8 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -23,25 +25,45 @@ export default function AddExpenseScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Variável derivada para saber se estamos editando
   const transactionToEdit = route.params?.transactionToEdit;
 
-  // Lógica para carregar dados ao focar na tela ou limpar se não houver parametro
+  // Lógica para carregar dados ou limpar
   useFocusEffect(
     useCallback(() => {
       if (transactionToEdit) {
-        // Se veio do Dashboard com dados, preenche o form
         setDescription(transactionToEdit.descricao);
-        setValue(String(transactionToEdit.valor));
+        // Formata o valor existente para o padrão visual (ex: 10.5 -> 10,50)
+        setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
       } else {
-        // Se clicou na aba ou veio sem parâmetros, limpa o form
         setDescription("");
         setValue("");
         setDate(new Date());
       }
     }, [transactionToEdit])
   );
+
+  // --- Função de Máscara de Moeda ---
+  const handleAmountChange = (text) => {
+    // 1. Remove tudo que não for dígito numérico
+    const cleanValue = text.replace(/\D/g, "");
+
+    // 2. Se estiver vazio, reseta
+    if (!cleanValue) {
+      setValue("");
+      return;
+    }
+
+    // 3. Converte para número (centavos) e divide por 100
+    const numberValue = Number(cleanValue) / 100;
+
+    // 4. Formata de volta para string com vírgula e 2 casas decimais
+    // Ex: 9 -> 0.09 -> "0,09"
+    // Ex: 999 -> 9.99 -> "9,99"
+    const formattedValue = numberValue.toFixed(2).replace(".", ",");
+
+    setValue(formattedValue);
+  };
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || date;
@@ -57,7 +79,8 @@ export default function AddExpenseScreen({ navigation, route }) {
 
     setLoading(true);
 
-    const numericValue = parseFloat(value.replace(",", "."));
+    // Converte "9,99" para 9.99 (float) para salvar no banco
+    const numericValue = parseFloat(value.replace(/\./g, "").replace(",", "."));
 
     if (isNaN(numericValue)) {
       Alert.alert("Erro", "Valor inválido.");
@@ -68,7 +91,7 @@ export default function AddExpenseScreen({ navigation, route }) {
     let error = null;
 
     if (transactionToEdit) {
-      // --- MODO EDIÇÃO (UPDATE) ---
+      // --- UPDATE ---
       const { error: updateError } = await supabase
         .from("despesa")
         .update({
@@ -80,7 +103,7 @@ export default function AddExpenseScreen({ navigation, route }) {
 
       error = updateError;
     } else {
-      // --- MODO CRIAÇÃO (INSERT) ---
+      // --- INSERT ---
       const { error: insertError } = await supabase.from("despesa").insert({
         user_id: user.id,
         descricao: description,
@@ -100,21 +123,16 @@ export default function AddExpenseScreen({ navigation, route }) {
         transactionToEdit ? "Despesa atualizada!" : "Despesa registrada!"
       );
 
-      // Limpa os campos locais imediatamente
+      // Limpeza
       setDescription("");
       setValue("");
       setDate(new Date());
-
-      // Limpa o parâmetro da rota para que ao voltar não esteja mais em modo edição
       navigation.setParams({ transactionToEdit: null });
-
-      // Vai para o dashboard
       navigation.navigate("Dashboard");
     }
     setLoading(false);
   };
 
-  // Função para cancelar edição manual
   const handleCancelEdit = () => {
     navigation.setParams({ transactionToEdit: null });
     setDescription("");
@@ -123,70 +141,75 @@ export default function AddExpenseScreen({ navigation, route }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>
-        {transactionToEdit ? "Editar Despesa" : "Nova Despesa"}
-      </Text>
+    // Envolve a tela para detectar toque fora e fechar teclado
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>
+          {transactionToEdit ? "Editar Despesa" : "Nova Despesa"}
+        </Text>
 
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Ex: Supermercado"
-        value={description}
-        onChangeText={setDescription}
-      />
-
-      <Text style={styles.label}>Valor (R$)</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="0,00"
-        keyboardType="numeric"
-        value={value}
-        onChangeText={setValue}
-      />
-
-      <Text style={styles.label}>Data da Transação</Text>
-      <TouchableOpacity
-        style={styles.dateButton}
-        onPress={() => setShowDatePicker(true)}
-      >
-        <Text style={styles.dateText}>{date.toLocaleDateString("pt-BR")}</Text>
-      </TouchableOpacity>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-
-      <View style={styles.buttonContainer}>
-        <Button
-          title={
-            loading
-              ? "Salvando..."
-              : transactionToEdit
-              ? "Atualizar"
-              : "Salvar Despesa"
-          }
-          color="#e74c3c"
-          onPress={handleSave}
-          disabled={loading}
+        <Text style={styles.label}>Descrição</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Ex: Supermercado"
+          value={description}
+          onChangeText={setDescription}
         />
 
-        {transactionToEdit && (
-          <View style={{ marginTop: 10 }}>
-            <Button
-              title="Cancelar Edição"
-              color="gray"
-              onPress={handleCancelEdit}
-            />
-          </View>
+        <Text style={styles.label}>Valor (R$)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="0,00"
+          keyboardType="numeric"
+          value={value}
+          onChangeText={handleAmountChange} // Usa a nova função de máscara
+        />
+
+        <Text style={styles.label}>Data da Transação</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.dateText}>
+            {date.toLocaleDateString("pt-BR")}
+          </Text>
+        </TouchableOpacity>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+          />
         )}
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title={
+              loading
+                ? "Salvando..."
+                : transactionToEdit
+                ? "Atualizar"
+                : "Salvar Despesa"
+            }
+            color="#e74c3c"
+            onPress={handleSave}
+            disabled={loading}
+          />
+
+          {transactionToEdit && (
+            <View style={{ marginTop: 10 }}>
+              <Button
+                title="Cancelar Edição"
+                color="gray"
+                onPress={handleCancelEdit}
+              />
+            </View>
+          )}
+        </View>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 }
