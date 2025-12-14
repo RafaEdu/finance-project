@@ -23,7 +23,7 @@ export default function DashboardScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   // Estados de Filtro
-  const [filterType, setFilterType] = useState("day"); // 'day', 'month', 'year'
+  const [filterType, setFilterType] = useState("day");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -34,7 +34,11 @@ export default function DashboardScreen({ navigation }) {
   const [monthToDateBalance, setMonthToDateBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
 
-  // Configuração do Header
+  // --- LÓGICA DE EXIBIÇÃO DO NOME ---
+  // Tenta pegar o nome dos metadados, senão usa o e-mail
+  const displayName =
+    user?.user_metadata?.full_name || user?.email?.split("@")[0];
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -48,7 +52,6 @@ export default function DashboardScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // Função auxiliar de datas
   const getDateRange = (date, type) => {
     const start = new Date(date);
     const end = new Date(date);
@@ -75,12 +78,10 @@ export default function DashboardScreen({ navigation }) {
     };
   };
 
-  // Buscar Dados
   const fetchDashboardData = async () => {
     try {
       const { startISO, endISO } = getDateRange(currentDate, filterType);
 
-      // 1. Buscar Receitas
       const { data: incomes, error: incomeError } = await supabase
         .from("receita")
         .select("*")
@@ -91,7 +92,6 @@ export default function DashboardScreen({ navigation }) {
 
       if (incomeError) throw incomeError;
 
-      // 2. Buscar Despesas
       const { data: expenses, error: expenseError } = await supabase
         .from("despesa")
         .select("*")
@@ -102,7 +102,6 @@ export default function DashboardScreen({ navigation }) {
 
       if (expenseError) throw expenseError;
 
-      // 3. Cálculos
       const sumIncome = incomes.reduce(
         (acc, curr) => acc + Number(curr.valor),
         0
@@ -116,7 +115,6 @@ export default function DashboardScreen({ navigation }) {
       setTotalExpense(sumExpense);
       setBalance(sumIncome - sumExpense);
 
-      // 4. Lista Unificada
       const formattedIncomes = incomes.map((i) => ({ ...i, type: "income" }));
       const formattedExpenses = expenses.map((e) => ({
         ...e,
@@ -130,7 +128,6 @@ export default function DashboardScreen({ navigation }) {
 
       setTransactions(allTransactions);
 
-      // 5. Saldo Acumulado (se filtro for dia)
       if (filterType === "day") {
         await fetchMonthToDateBalance(currentDate);
       }
@@ -179,11 +176,8 @@ export default function DashboardScreen({ navigation }) {
     setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
   };
 
-  // Funções de Ação (Editar e Excluir)
   const handleEdit = (item) => {
-    // Determina a tela correta baseada no tipo
     const screenName = item.type === "income" ? "Nova Receita" : "Nova Despesa";
-    // Navega passando o item inteiro para ser editado
     navigation.navigate(screenName, { transactionToEdit: item });
   };
 
@@ -208,7 +202,6 @@ export default function DashboardScreen({ navigation }) {
             if (error) {
               Alert.alert("Erro", "Não foi possível excluir.");
             } else {
-              // Recarrega os dados após excluir
               fetchDashboardData();
             }
             setLoading(false);
@@ -301,7 +294,6 @@ export default function DashboardScreen({ navigation }) {
             {isIncome ? "+" : "-"} {formatCurrency(Number(item.valor))}
           </Text>
 
-          {/* Botões de Ação */}
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               onPress={() => handleEdit(item)}
@@ -329,7 +321,8 @@ export default function DashboardScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.greeting}>Olá, {user?.email?.split("@")[0]}</Text>
+        {/* --- Saudação atualizada com o nome do perfil --- */}
+        <Text style={styles.greeting}>Olá, {displayName}</Text>
 
         <View style={styles.filterContainer}>
           {["day", "month", "year"].map((type) => (
