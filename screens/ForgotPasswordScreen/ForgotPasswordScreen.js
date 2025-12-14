@@ -4,9 +4,10 @@ import {
   Text,
   TextInput,
   Button,
-  StyleSheet,
   Alert,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { styles } from "./ForgotPasswordScreen.styles";
@@ -16,41 +17,63 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   async function sendResetEmail() {
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "exp://localhost:19000/--/reset-password", // Ajuste conforme necessário para deep linking
-    });
+    if (!email) {
+      Alert.alert("Erro", "Por favor, digite seu e-mail.");
+      return;
+    }
 
-    if (error) Alert.alert("Erro", error.message);
-    else Alert.alert("Sucesso", "Email de recuperação enviado!");
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+    if (error) {
+      Alert.alert("Erro", error.message);
+    } else {
+      Alert.alert(
+        "Sucesso",
+        "Código de recuperação enviado! Verifique seu e-mail."
+      );
+      // Mudança aqui: VerifyAccount
+      navigation.navigate("VerifyAccount", {
+        email: email,
+        type: "recovery",
+      });
+    }
 
     setLoading(false);
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Recuperar Senha</Text>
-      <Text style={styles.subtitle}>
-        Digite seu email para receber o link de redefinição.
-      </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Recuperar Senha</Text>
+        <Text style={styles.subtitle}>
+          Digite seu email para receber o código de 6 dígitos.
+        </Text>
 
-      <TextInput
-        style={styles.input}
-        onChangeText={setEmail}
-        value={email}
-        placeholder="email@endereco.com"
-        autoCapitalize="none"
-      />
+        <TextInput
+          style={styles.input}
+          onChangeText={setEmail}
+          value={email}
+          placeholder="email@endereco.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
 
-      <Button
-        title="Enviar Email"
-        disabled={loading}
-        onPress={sendResetEmail}
-      />
+        <View style={styles.buttonContainer}>
+          <Button
+            title={loading ? "Enviando..." : "Enviar Código"}
+            disabled={loading}
+            onPress={sendResetEmail}
+          />
+        </View>
 
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.link}>
-        <Text style={styles.linkText}>Voltar para Login</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.link}
+        >
+          <Text style={styles.linkText}>Voltar para Login</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }

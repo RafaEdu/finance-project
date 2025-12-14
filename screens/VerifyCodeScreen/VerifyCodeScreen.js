@@ -1,17 +1,10 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, TextInput, Button, Alert } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { styles } from "./VerifyCodeScreen.styles";
 
 export default function VerifyCodeScreen({ route, navigation }) {
-  const { email, type, newPassword } = route.params; // Recebe dados da tela anterior
+  const { email, type, newPassword } = route.params;
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -25,15 +18,17 @@ export default function VerifyCodeScreen({ route, navigation }) {
 
     try {
       // 1. Verificar o código OTP
-      const { data, error } = await supabase.auth.verifyOtp({
+      // Se type="signup", o sucesso aqui cria a sessão, e o App.js automaticamente
+      // troca para a pilha Autenticada (MainTabs), saindo desta tela.
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: type, // 'signup' ou 'recovery'
+        type: type,
       });
 
       if (error) throw error;
 
-      // 2. Se for fluxo de 'recovery' (Troca de senha do perfil), atualizamos a senha agora
+      // 2. Se for fluxo de 'recovery' com nova senha (vindo do Perfil logado)
       if (type === "recovery" && newPassword) {
         const { error: updateError } = await supabase.auth.updateUser({
           password: newPassword,
@@ -41,12 +36,19 @@ export default function VerifyCodeScreen({ route, navigation }) {
         if (updateError) throw updateError;
 
         Alert.alert("Sucesso", "Senha atualizada com sucesso!");
-        navigation.navigate("MainTabs"); // Volta para o Dashboard
+        navigation.navigate("MainTabs"); // Volta para o Dashboard manualmente pois já estávamos logados
       }
-      // 3. Se for 'signup', o AuthContext detectará a sessão automaticamente
+      // 3. Se for 'signup', o App.js cuidará do redirecionamento automático
       else if (type === "signup") {
         Alert.alert("Sucesso", "Conta verificada! Bem-vindo.");
-        // Não precisa navegar manualmente se o AuthContext estiver ouvindo o estado
+      }
+      // 4. Se for 'recovery' do ForgotPassword (sem senha ainda)
+      else if (type === "recovery" && !newPassword) {
+        // O usuário foi logado pelo token. O App.js vai jogar para o Dashboard.
+        Alert.alert(
+          "Sucesso",
+          "Você foi logado! Vá ao seu perfil para redefinir sua senha."
+        );
       }
     } catch (error) {
       Alert.alert("Erro na verificação", error.message);

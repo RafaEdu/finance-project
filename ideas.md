@@ -7,4 +7,4 @@
 - [ ] Opção de ver saldo(dia, mês ou ano), vir apenas se o usuário acionar um colapse;
 - [ ] Remover escrita "(ACOMULADO)" virando "SALDO MENSAL ACOMULADO";
 - [x] Opção para colocar o nome no perfil;
-- [ ] Enviar código no e-mail para alterar a senha;
+- [x] Enviar código no e-mail para alterar a senha;

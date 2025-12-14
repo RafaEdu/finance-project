@@ -55,7 +55,6 @@ export default function ProfileScreen({ navigation }) {
     setLoadingName(false);
   };
 
-  // --- Lógica Ajustada de Alterar Senha ---
   const handleChangePassword = async () => {
     if (!newPassword || newPassword.length < 6) {
       Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
@@ -63,16 +62,12 @@ export default function ProfileScreen({ navigation }) {
     }
 
     setLoading(true);
-
-    // Dispara o envio do código de recuperação para o email atual
     const { error } = await supabase.auth.resetPasswordForEmail(user.email);
-
     setLoading(false);
 
     if (error) {
       Alert.alert("Erro ao enviar código", error.message);
     } else {
-      // Navegação movida para dentro do onPress do Alert para garantir a leitura e o fluxo
       Alert.alert(
         "Verificação Enviada",
         `Um código de 6 dígitos foi enviado para ${user.email}. Digite-o na próxima tela para confirmar a nova senha.`,
@@ -80,12 +75,13 @@ export default function ProfileScreen({ navigation }) {
           {
             text: "OK, recebi o código",
             onPress: () => {
-              navigation.navigate("VerifyCode", {
+              // Mudança aqui: VerifyUpdate
+              navigation.navigate("VerifyUpdate", {
                 email: user.email,
                 type: "recovery",
                 newPassword: newPassword,
               });
-              setNewPassword(""); // Limpa o campo da senha
+              setNewPassword("");
             },
           },
         ]

@@ -6,16 +6,13 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-// Context
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
-// Telas de Autenticação
 import LoginScreen from "./screens/LoginScreen/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen/RegisterScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen/ForgotPasswordScreen";
-import VerifyCodeScreen from "./screens/VerifyCodeScreen/VerifyCodeScreen"; // NOVA IMPORTAÇÃO
+import VerifyCodeScreen from "./screens/VerifyCodeScreen/VerifyCodeScreen";
 
-// Telas da Aplicação
 import DashboardScreen from "./screens/DashboardScreen/DashboardScreen";
 import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen";
 import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen";
@@ -93,11 +90,11 @@ function Navigation() {
                 headerBackTitle: "Voltar",
               }}
             />
-            {/* Disponível aqui para a troca de senha */}
+            {/* Nome DIFERENTE para quando estiver logado (Update) */}
             <Stack.Screen
-              name="VerifyCode"
+              name="VerifyUpdate"
               component={VerifyCodeScreen}
-              options={{ headerShown: true, title: "Confirmar Código" }}
+              options={{ headerShown: true, title: "Confirmar Alteração" }}
             />
           </Stack.Group>
         ) : (
@@ -109,11 +106,11 @@ function Navigation() {
               name="ForgotPassword"
               component={ForgotPasswordScreen}
             />
-            {/* Disponível aqui para o cadastro */}
+            {/* Nome DIFERENTE para quando estiver deslogado (Cadastro/Recuperação) */}
             <Stack.Screen
-              name="VerifyCode"
+              name="VerifyAccount"
               component={VerifyCodeScreen}
-              options={{ headerShown: true, title: "Confirmar Cadastro" }}
+              options={{ headerShown: true, title: "Verificar Conta" }}
             />
           </Stack.Group>
         )}
