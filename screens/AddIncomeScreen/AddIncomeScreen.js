@@ -25,13 +25,16 @@ export default function AddIncomeScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Estados para o Toast
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
   const transactionToEdit = route.params?.transactionToEdit;
 
   useFocusEffect(
     useCallback(() => {
       if (transactionToEdit) {
         setDescription(transactionToEdit.descricao);
-        // Formata o valor existente para visualização
         setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
       } else {
@@ -39,10 +42,10 @@ export default function AddIncomeScreen({ navigation, route }) {
         setValue("");
         setDate(new Date());
       }
+      setShowToast(false);
     }, [transactionToEdit])
   );
 
-  // --- Função de Máscara de Moeda ---
   const handleAmountChange = (text) => {
     const cleanValue = text.replace(/\D/g, "");
     if (!cleanValue) {
@@ -68,7 +71,6 @@ export default function AddIncomeScreen({ navigation, route }) {
 
     setLoading(true);
 
-    // Converte para float (remove pontos de milhar se houver, troca virgula por ponto)
     const numericValue = parseFloat(value.replace(/\./g, "").replace(",", "."));
 
     if (isNaN(numericValue)) {
@@ -80,7 +82,6 @@ export default function AddIncomeScreen({ navigation, route }) {
     let error = null;
 
     if (transactionToEdit) {
-      // --- UPDATE ---
       const { error: updateError } = await supabase
         .from("receita")
         .update({
@@ -92,7 +93,6 @@ export default function AddIncomeScreen({ navigation, route }) {
 
       error = updateError;
     } else {
-      // --- INSERT ---
       const { error: insertError } = await supabase.from("receita").insert({
         user_id: user.id,
         descricao: description,
@@ -106,19 +106,26 @@ export default function AddIncomeScreen({ navigation, route }) {
 
     if (error) {
       Alert.alert("Erro ao salvar", error.message);
+      setLoading(false);
     } else {
-      Alert.alert(
-        "Sucesso",
-        transactionToEdit ? "Receita atualizada!" : "Receita registrada!"
+      // --- Lógica do Toast ---
+      setToastMessage(
+        transactionToEdit
+          ? "Receita atualizada com sucesso!"
+          : "Receita registrada com sucesso!"
       );
+      setShowToast(true);
 
-      setDescription("");
-      setValue("");
-      setDate(new Date());
-      navigation.setParams({ transactionToEdit: null });
-      navigation.navigate("Dashboard");
+      setTimeout(() => {
+        setDescription("");
+        setValue("");
+        setDate(new Date());
+        navigation.setParams({ transactionToEdit: null });
+        navigation.navigate("Dashboard");
+        setLoading(false);
+        setShowToast(false);
+      }, 1500);
     }
-    setLoading(false);
   };
 
   const handleCancelEdit = () => {
@@ -129,7 +136,6 @@ export default function AddIncomeScreen({ navigation, route }) {
   };
 
   return (
-    // Wrapper para fechar o teclado
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <Text style={styles.title}>
@@ -150,7 +156,7 @@ export default function AddIncomeScreen({ navigation, route }) {
           placeholder="0,00"
           keyboardType="numeric"
           value={value}
-          onChangeText={handleAmountChange} // Máscara aplicada aqui
+          onChangeText={handleAmountChange}
         />
 
         <Text style={styles.label}>Data da Transação</Text>
@@ -196,6 +202,13 @@ export default function AddIncomeScreen({ navigation, route }) {
             </View>
           )}
         </View>
+
+        {/* --- Componente Toast Personalizado --- */}
+        {showToast && (
+          <View style={styles.toastContainer}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );

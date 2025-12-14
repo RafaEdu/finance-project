@@ -9,6 +9,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  ActivityIndicator, // Importei para feedback visual no botão se necessário
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -25,14 +26,16 @@ export default function AddExpenseScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Estados para o Toast (Pop-up de confirmação)
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
   const transactionToEdit = route.params?.transactionToEdit;
 
-  // Lógica para carregar dados ou limpar
   useFocusEffect(
     useCallback(() => {
       if (transactionToEdit) {
         setDescription(transactionToEdit.descricao);
-        // Formata o valor existente para o padrão visual (ex: 10.5 -> 10,50)
         setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
       } else {
@@ -40,28 +43,19 @@ export default function AddExpenseScreen({ navigation, route }) {
         setValue("");
         setDate(new Date());
       }
+      // Garante que o toast esteja oculto ao entrar na tela
+      setShowToast(false);
     }, [transactionToEdit])
   );
 
-  // --- Função de Máscara de Moeda ---
   const handleAmountChange = (text) => {
-    // 1. Remove tudo que não for dígito numérico
     const cleanValue = text.replace(/\D/g, "");
-
-    // 2. Se estiver vazio, reseta
     if (!cleanValue) {
       setValue("");
       return;
     }
-
-    // 3. Converte para número (centavos) e divide por 100
     const numberValue = Number(cleanValue) / 100;
-
-    // 4. Formata de volta para string com vírgula e 2 casas decimais
-    // Ex: 9 -> 0.09 -> "0,09"
-    // Ex: 999 -> 9.99 -> "9,99"
     const formattedValue = numberValue.toFixed(2).replace(".", ",");
-
     setValue(formattedValue);
   };
 
@@ -79,7 +73,6 @@ export default function AddExpenseScreen({ navigation, route }) {
 
     setLoading(true);
 
-    // Converte "9,99" para 9.99 (float) para salvar no banco
     const numericValue = parseFloat(value.replace(/\./g, "").replace(",", "."));
 
     if (isNaN(numericValue)) {
@@ -91,7 +84,6 @@ export default function AddExpenseScreen({ navigation, route }) {
     let error = null;
 
     if (transactionToEdit) {
-      // --- UPDATE ---
       const { error: updateError } = await supabase
         .from("despesa")
         .update({
@@ -103,7 +95,6 @@ export default function AddExpenseScreen({ navigation, route }) {
 
       error = updateError;
     } else {
-      // --- INSERT ---
       const { error: insertError } = await supabase.from("despesa").insert({
         user_id: user.id,
         descricao: description,
@@ -117,20 +108,27 @@ export default function AddExpenseScreen({ navigation, route }) {
 
     if (error) {
       Alert.alert("Erro ao salvar", error.message);
+      setLoading(false);
     } else {
-      Alert.alert(
-        "Sucesso",
-        transactionToEdit ? "Despesa atualizada!" : "Despesa registrada!"
+      // --- Lógica do Toast em vez de Alert ---
+      setToastMessage(
+        transactionToEdit
+          ? "Despesa atualizada com sucesso!"
+          : "Despesa registrada com sucesso!"
       );
+      setShowToast(true);
 
-      // Limpeza
-      setDescription("");
-      setValue("");
-      setDate(new Date());
-      navigation.setParams({ transactionToEdit: null });
-      navigation.navigate("Dashboard");
+      // Aguarda 1.5 segundos para o usuário ler a mensagem antes de sair
+      setTimeout(() => {
+        setDescription("");
+        setValue("");
+        setDate(new Date());
+        navigation.setParams({ transactionToEdit: null });
+        navigation.navigate("Dashboard");
+        setLoading(false); // Libera o loading apenas ao sair
+        setShowToast(false);
+      }, 1500);
     }
-    setLoading(false);
   };
 
   const handleCancelEdit = () => {
@@ -141,7 +139,6 @@ export default function AddExpenseScreen({ navigation, route }) {
   };
 
   return (
-    // Envolve a tela para detectar toque fora e fechar teclado
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <Text style={styles.title}>
@@ -162,7 +159,7 @@ export default function AddExpenseScreen({ navigation, route }) {
           placeholder="0,00"
           keyboardType="numeric"
           value={value}
-          onChangeText={handleAmountChange} // Usa a nova função de máscara
+          onChangeText={handleAmountChange}
         />
 
         <Text style={styles.label}>Data da Transação</Text>
@@ -209,6 +206,13 @@ export default function AddExpenseScreen({ navigation, route }) {
             </View>
           )}
         </View>
+
+        {/* --- Componente Toast Personalizado --- */}
+        {showToast && (
+          <View style={styles.toastContainer}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
