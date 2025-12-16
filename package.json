@@ -36,5 +36,11 @@
   "devDependencies": {
     "@babel/core": "^7.25.2"
   },
+  "overrides": {
+    "react-native-web": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "private": true
 }
