@@ -12,6 +12,4 @@
 ### Ajustes a serem feitos:
 
 - [ ] Mostrar logs no console para corrigir e averiguar erros
-- [ ] Botão logout não está funcionando
-- [ ] Não está sendo possível deletar movimentações
-- [ ] Não aparece mensagem de confirmação após alterar o nome
+- [ ] Corrigir sumiço dos placeholders no apk após build
