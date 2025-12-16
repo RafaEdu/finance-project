@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Platform,
   Alert,
+  TextInput, // Adicionado import do TextInput
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,9 @@ export default function DashboardScreen({ navigation }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Estado da Pesquisa (Novo)
+  const [searchText, setSearchText] = useState("");
+
   // Estados de Dados
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpense, setTotalExpense] = useState(0);
@@ -35,7 +39,6 @@ export default function DashboardScreen({ navigation }) {
   const [transactions, setTransactions] = useState([]);
 
   // --- LÓGICA DE EXIBIÇÃO DO NOME ---
-  // Tenta pegar o nome dos metadados, senão usa o e-mail
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
@@ -258,6 +261,11 @@ export default function DashboardScreen({ navigation }) {
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
+  // --- Lógica de Filtro no Cliente ---
+  const filteredTransactions = transactions.filter((item) =>
+    item.descricao.toLowerCase().includes(searchText.toLowerCase())
+  );
+
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -321,7 +329,6 @@ export default function DashboardScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* --- Saudação atualizada com o nome do perfil --- */}
         <Text style={styles.greeting}>Olá, {displayName}</Text>
 
         <View style={styles.filterContainer}>
@@ -412,12 +419,40 @@ export default function DashboardScreen({ navigation }) {
             : "Histórico do Período"}
         </Text>
 
-        {transactions.length === 0 ? (
+        {/* --- BARRA DE PESQUISA ADICIONADA --- */}
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search"
+            size={20}
+            color="#999"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Pesquisar movimentação..."
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCapitalize="none"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchText("")}>
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {filteredTransactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Nenhuma transação encontrada.</Text>
+            <Text style={styles.emptyText}>
+              {transactions.length === 0
+                ? "Nenhuma transação encontrada."
+                : "Nenhum resultado para a pesquisa."}
+            </Text>
           </View>
         ) : (
-          <View>{transactions.map((item) => renderTransactionItem(item))}</View>
+          <View>
+            {filteredTransactions.map((item) => renderTransactionItem(item))}
+          </View>
         )}
       </ScrollView>
     </View>

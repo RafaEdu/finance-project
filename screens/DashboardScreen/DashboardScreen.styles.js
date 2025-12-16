@@ -148,6 +148,29 @@ export const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
   },
+  // --- Estilos da SearchBar (Novos) ---
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 4, // Ajuste para centralizar texto no Android
+  },
+  // ------------------------------------
+
   transactionCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -188,7 +211,6 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginRight: 10,
   },
-  // Novos estilos para os botões de ação
   actionsContainer: {
     flexDirection: "row",
     alignItems: "center",
