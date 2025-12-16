@@ -1,4 +1,9 @@
-import React, { useState, useLayoutEffect, useCallback } from "react";
+import React, {
+  useState,
+  useLayoutEffect,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -8,11 +13,12 @@ import {
   RefreshControl,
   Platform,
   Alert,
-  TextInput, // Adicionado import do TextInput
+  TextInput,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Importação do AsyncStorage
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import { styles } from "./DashboardScreen.styles";
@@ -28,8 +34,11 @@ export default function DashboardScreen({ navigation }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Estado da Pesquisa (Novo)
+  // Estado da Pesquisa
   const [searchText, setSearchText] = useState("");
+
+  // Estado de Visibilidade do Saldo (Persistente)
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
 
   // Estados de Dados
   const [totalIncome, setTotalIncome] = useState(0);
@@ -54,6 +63,32 @@ export default function DashboardScreen({ navigation }) {
       ),
     });
   }, [navigation]);
+
+  // Carregar estado de visibilidade do saldo ao iniciar
+  useEffect(() => {
+    const loadBalanceSettings = async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem("@balance_visible");
+        if (storedValue !== null) {
+          setIsBalanceVisible(JSON.parse(storedValue));
+        }
+      } catch (e) {
+        console.error("Erro ao carregar configuração de saldo:", e);
+      }
+    };
+    loadBalanceSettings();
+  }, []);
+
+  // Alternar e salvar visibilidade do saldo
+  const toggleBalanceVisibility = async () => {
+    const newValue = !isBalanceVisible;
+    setIsBalanceVisible(newValue);
+    try {
+      await AsyncStorage.setItem("@balance_visible", JSON.stringify(newValue));
+    } catch (e) {
+      console.error("Erro ao salvar configuração de saldo:", e);
+    }
+  };
 
   const getDateRange = (date, type) => {
     const start = new Date(date);
@@ -380,22 +415,8 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>
-            {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
-          </Text>
-          <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
-
-          {filterType === "day" && (
-            <View style={styles.secondaryBalanceContainer}>
-              <Text style={styles.balanceLabel}>Saldo do Mês (Acumulado)</Text>
-              <Text style={[styles.balanceValue, { fontSize: 22 }]}>
-                {formatCurrency(monthToDateBalance)}
-              </Text>
-            </View>
-          )}
-        </View>
-
+        {/* 1. Movido o summaryContainer (Cards de Receita/Despesa) para CIMA
+         */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, styles.incomeCard]}>
             <Ionicons name="trending-up" size={24} color="#27ae60" />
@@ -413,13 +434,49 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
+        {/* 2. Botão de Toggle para o Saldo (Seta para expandir/colapsar)
+         */}
+        <TouchableOpacity
+          style={styles.balanceToggleContainer}
+          onPress={toggleBalanceVisibility}
+        >
+          <Text style={styles.balanceToggleText}>
+            {isBalanceVisible ? "Ocultar Saldo Total" : "Ver Saldo Total"}
+          </Text>
+          <Ionicons
+            name={isBalanceVisible ? "chevron-up" : "chevron-down"}
+            size={20}
+            color="#666"
+          />
+        </TouchableOpacity>
+
+        {/* 3. Card de Saldo agora condicional e ABAIXO dos resumos
+         */}
+        {isBalanceVisible && (
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>
+              {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
+            </Text>
+            <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
+
+            {filterType === "day" && (
+              <View style={styles.secondaryBalanceContainer}>
+                {/* 4. Texto alterado conforme solicitado */}
+                <Text style={styles.balanceLabel}>SALDO MENSAL ACOMULADO</Text>
+                <Text style={[styles.balanceValue, { fontSize: 22 }]}>
+                  {formatCurrency(monthToDateBalance)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <Text style={styles.sectionTitle}>
           {filterType === "day"
             ? "Movimentações do Dia"
             : "Histórico do Período"}
         </Text>
 
-        {/* --- BARRA DE PESQUISA ADICIONADA --- */}
         <View style={styles.searchContainer}>
           <Ionicons
             name="search"

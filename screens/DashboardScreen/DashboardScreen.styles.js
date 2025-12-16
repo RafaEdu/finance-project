@@ -71,44 +71,11 @@ export const styles = StyleSheet.create({
     padding: 5,
   },
 
-  // --- Cards de Saldo ---
-  balanceCard: {
-    backgroundColor: "#0000ff",
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    alignItems: "center",
-  },
-  balanceLabel: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 14,
-    marginBottom: 5,
-    textTransform: "uppercase",
-  },
-  balanceValue: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "bold",
-  },
-  secondaryBalanceContainer: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.2)",
-    width: "100%",
-    alignItems: "center",
-  },
-
-  // --- Resumo ---
+  // --- Resumo (Movido para cima do BalanceCard logicamente, estilos mantidos) ---
   summaryContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 25,
+    marginBottom: 15, // Reduzi um pouco a margem inferior para aproximar do botão toggle
   },
   summaryCard: {
     flex: 0.48,
@@ -141,6 +108,54 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+  // --- Toggle do Saldo (Novos Estilos) ---
+  balanceToggleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15,
+    paddingVertical: 5,
+  },
+  balanceToggleText: {
+    fontSize: 14,
+    color: "#666",
+    marginRight: 5,
+    fontWeight: "500",
+  },
+
+  // --- Cards de Saldo ---
+  balanceCard: {
+    backgroundColor: "#0000ff",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 25, // Margem para separar do título da lista
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    alignItems: "center",
+  },
+  balanceLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 14,
+    marginBottom: 5,
+    textTransform: "uppercase",
+  },
+  balanceValue: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+  secondaryBalanceContainer: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.2)",
+    width: "100%",
+    alignItems: "center",
+  },
+
   // --- Lista ---
   sectionTitle: {
     fontSize: 18,
@@ -148,7 +163,6 @@ export const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
   },
-  // --- Estilos da SearchBar (Novos) ---
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -167,10 +181,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#333",
-    paddingVertical: 4, // Ajuste para centralizar texto no Android
+    paddingVertical: 4,
   },
-  // ------------------------------------
-
   transactionCard: {
     flexDirection: "row",
     alignItems: "center",
