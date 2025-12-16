@@ -8,3 +8,10 @@
 - [x] Remover escrita "(ACOMULADO)" virando "SALDO MENSAL ACOMULADO";
 - [x] Opção para colocar o nome no perfil;
 - [x] Enviar código no e-mail para alterar a senha;
+
+### Ajustes a serem feitos:
+
+- [ ] Mostrar logs no console para corrigir e averiguar erros
+- [ ] Botão logout não está funcionando
+- [ ] Não está sendo possível deletar movimentações
+- [ ] Não aparece mensagem de confirmação após alterar o nome
