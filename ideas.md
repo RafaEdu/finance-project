@@ -12,4 +12,4 @@
 ### Ajustes a serem feitos:
 
 - [ ] Mostrar logs no console para corrigir e averiguar erros
-- [ ] Corrigir sumiço dos placeholders no apk após build
+- [ ] Corrigir sumiço dos placeholders no apk em celulares com tema escuro
