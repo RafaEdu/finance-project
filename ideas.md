@@ -8,6 +8,9 @@
 - [x] Remover escrita "(ACOMULADO)" virando "SALDO MENSAL ACOMULADO";
 - [x] Opção para colocar o nome no perfil;
 - [x] Enviar código no e-mail para alterar a senha;
+- [ ] Cadastrar opção de parcela
+- [ ] Liberar cadastro de movimentação em datas futuras
+- [ ] Criar abas faturas
 
 ### Ajustes a serem feitos:
 
