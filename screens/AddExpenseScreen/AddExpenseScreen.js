@@ -9,7 +9,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator, // Importei para feedback visual no botão se necessário
+  ActivityIndicator,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -178,7 +178,6 @@ export default function AddExpenseScreen({ navigation, route }) {
             mode="date"
             display="default"
             onChange={handleDateChange}
-            maximumDate={new Date()}
           />
         )}
 
