@@ -14,6 +14,7 @@ import {
   Platform,
   Alert,
   TextInput,
+  Image, // Importar Image
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -51,18 +52,29 @@ export default function DashboardScreen({ navigation }) {
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
+  // Configuração do Header com a Foto de Perfil
   useLayoutEffect(() => {
+    const avatarUrl = user?.user_metadata?.avatar_url;
+
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
-          style={styles.profileIcon}
+          style={[styles.profileIcon, { overflow: "hidden", borderRadius: 15 }]} // Ajuste de estilo para imagem redonda
           onPress={() => navigation.navigate("Profile")}
         >
-          <Ionicons name="person-circle-outline" size={30} color="#0000ff" />
+          {avatarUrl ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={{ width: 30, height: 30, borderRadius: 15 }}
+            />
+          ) : (
+            <Ionicons name="person-circle-outline" size={30} color="#0000ff" />
+          )}
         </TouchableOpacity>
       ),
     });
-  }, [navigation]);
+    // Adicionamos 'user' nas dependências para atualizar quando a foto mudar
+  }, [navigation, user]);
 
   useEffect(() => {
     const loadBalanceSettings = async () => {
@@ -116,10 +128,6 @@ export default function DashboardScreen({ navigation }) {
 
   const fetchDashboardData = async (retryCount = 0) => {
     try {
-      // UX CORRIGIDA: Não forçamos setLoading(true) aqui.
-      // Isso evita que a tela pisque (fique branca com spinner) ao trocar datas.
-      // O loading só é true na inicialização (state inicial) ou no refresh manual.
-
       const { startISO, endISO } = getDateRange(currentDate, filterType);
 
       // 1. Busca Receitas
@@ -187,7 +195,6 @@ export default function DashboardScreen({ navigation }) {
         (error.message && error.message.toLowerCase().includes("jwt"));
 
       if (isJwtError && retryCount < 3) {
-        // Tenta renovar a sessão silenciosamente
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (!refreshError) {
           return fetchDashboardData(retryCount + 1);
@@ -195,7 +202,6 @@ export default function DashboardScreen({ navigation }) {
       }
       console.log("Erro ao carregar dashboard:", error.message || error);
     } finally {
-      // Garante que o loading inicial ou refresh sumam
       setLoading(false);
       setRefreshing(false);
     }
@@ -257,7 +263,6 @@ export default function DashboardScreen({ navigation }) {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
-            // Aqui mantemos loading visual pois é uma ação destrutiva
             setLoading(true);
             const tableName = item.type === "income" ? "receita" : "despesa";
 
@@ -284,7 +289,6 @@ export default function DashboardScreen({ navigation }) {
 
   useFocusEffect(
     useCallback(() => {
-      // Chama busca de dados sempre que a tela ganha foco ou filtros mudam
       fetchDashboardData();
     }, [currentDate, filterType])
   );
@@ -295,7 +299,6 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const changeDate = (direction) => {
-    // Apenas atualiza a data. O useEffect/useFocusEffect vai disparar o fetch.
     const newDate = new Date(currentDate);
     if (filterType === "day") newDate.setDate(newDate.getDate() + direction);
     else if (filterType === "month")
@@ -336,7 +339,6 @@ export default function DashboardScreen({ navigation }) {
     (item.descricao || "").toLowerCase().includes(searchText.toLowerCase())
   );
 
-  // Loading SOMENTE se for a primeira carga E não estiver fazendo refresh manual
   if (
     loading &&
     !refreshing &&

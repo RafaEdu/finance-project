@@ -172,3 +172,33 @@ on public.despesa for update using (auth.uid() = user_id);
 create policy "Usuários podem deletar suas despesas"
 on public.despesa for delete using (auth.uid() = user_id);
 ```
+
+### =========================================================
+
+### STORAGE (AVATARS)
+
+### =========================================================
+
+```sql
+-- 1. Criação do Bucket (caso não exista, tente criar via interface se der erro aqui)
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true);
+
+-- 2. Políticas de Segurança (RLS) para o Storage
+
+-- Permitir acesso público para visualizar avatares
+create policy "Avatar images are publicly accessible"
+  on storage.objects for select
+  using ( bucket_id = 'avatars' );
+
+-- Permitir upload apenas para usuários autenticados (na sua própria pasta)
+create policy "Anyone can upload an avatar"
+  on storage.objects for insert
+  with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
+
+-- Permitir atualização do próprio avatar
+create policy "Anyone can update their own avatar"
+  on storage.objects for update
+  using ( auth.uid() = owner )
+  with check ( bucket_id = 'avatars' and auth.role() = 'authenticated' );
+```
