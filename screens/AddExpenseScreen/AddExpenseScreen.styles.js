@@ -1,62 +1,92 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#f5f6fa",
+  },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-    textAlign: "center",
     color: "#e74c3c",
+    textAlign: "center",
   },
-  label: { fontSize: 16, marginBottom: 5, fontWeight: "500", color: "#333" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
+  label: {
     fontSize: 16,
-    backgroundColor: "#fafafa",
+    color: "#333",
+    marginBottom: 5,
+    marginTop: 10,
+    fontWeight: "500",
+  },
+  input: {
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    fontSize: 16,
   },
   dateButton: {
-    padding: 12,
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 30,
-    backgroundColor: "#fafafa",
+    borderColor: "#ddd",
     alignItems: "center",
+    marginBottom: 10,
   },
   dateText: {
     fontSize: 16,
     color: "#333",
   },
   buttonContainer: {
-    marginTop: 10,
+    marginTop: 20,
   },
-  // Estilos do Pop-up (Toast)
   toastContainer: {
     position: "absolute",
-    bottom: 40, // Distância do fundo
+    bottom: 50,
     left: 20,
     right: 20,
-    backgroundColor: "rgba(50, 50, 50, 0.9)", // Fundo escuro semi-transparente
+    backgroundColor: "#333",
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1000, // Garante que fique acima de tudo
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
     elevation: 5,
   },
   toastText: {
     color: "#fff",
+    fontWeight: "bold",
+  },
+  // Novos Estilos
+  recurringContainer: {
+    marginTop: 15,
+    padding: 15,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  labelSwitch: {
     fontSize: 16,
-    fontWeight: "600",
+    color: "#333",
+    fontWeight: "bold",
+  },
+  installmentsRow: {
+    marginTop: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  inputSmall: {
+    width: "40%",
     textAlign: "center",
   },
 });

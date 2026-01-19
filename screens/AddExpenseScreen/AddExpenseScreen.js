@@ -9,13 +9,18 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator,
+  Switch, // Importado para o toggle
+  StyleSheet,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { styles } from "./AddExpenseScreen.styles";
+// Importar biblioteca para gerar UUID (opcional, ou usar Math.random para MVP se não tiver uuid instalada)
+// Como o Supabase gera IDs, usaremos um timestamp + random para o grupo_id no front ou deixamos null se for única.
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid"; // Certifique-se de ter: npm install uuid react-native-get-random-values
 
 export default function AddExpenseScreen({ navigation, route }) {
   const { user } = useAuth();
@@ -26,7 +31,11 @@ export default function AddExpenseScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Estados para o Toast (Pop-up de confirmação)
+  // Novos estados para parcelamento
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [installmentsCount, setInstallmentsCount] = useState("2"); // Padrão 2 parcelas se ativado
+
+  // Estados para o Toast
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
@@ -38,14 +47,17 @@ export default function AddExpenseScreen({ navigation, route }) {
         setDescription(transactionToEdit.descricao);
         setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
+        // Se estiver editando, desabilitamos a opção de transformar em recorrente para simplificar a lógica
+        setIsRecurring(false);
       } else {
         setDescription("");
         setValue("");
         setDate(new Date());
+        setIsRecurring(false);
+        setInstallmentsCount("2");
       }
-      // Garante que o toast esteja oculto ao entrar na tela
       setShowToast(false);
-    }, [transactionToEdit])
+    }, [transactionToEdit]),
   );
 
   const handleAmountChange = (text) => {
@@ -83,51 +95,109 @@ export default function AddExpenseScreen({ navigation, route }) {
 
     let error = null;
 
-    if (transactionToEdit) {
-      const { error: updateError } = await supabase
-        .from("despesa")
-        .update({
-          descricao: description,
-          valor: numericValue,
-          data_transacao: date.toISOString(),
-        })
-        .eq("id", transactionToEdit.id);
+    try {
+      if (transactionToEdit) {
+        // Lógica de Edição (Mantida simples, edita apenas a selecionada)
+        const { error: updateError } = await supabase
+          .from("despesa")
+          .update({
+            descricao: description,
+            valor: numericValue,
+            data_transacao: date.toISOString(),
+          })
+          .eq("id", transactionToEdit.id);
 
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase.from("despesa").insert({
-        user_id: user.id,
-        descricao: description,
-        valor: numericValue,
-        data_transacao: date.toISOString(),
-        pago: false,
-      });
+        error = updateError;
+      } else {
+        // Lógica de Criação
+        if (isRecurring) {
+          // *** LÓGICA DE PARCELAMENTO ***
+          const totalInstallments = parseInt(installmentsCount);
 
-      error = insertError;
-    }
+          if (isNaN(totalInstallments) || totalInstallments < 2) {
+            Alert.alert("Erro", "Número de parcelas inválido.");
+            setLoading(false);
+            return;
+          }
 
-    if (error) {
-      Alert.alert("Erro ao salvar", error.message);
+          const expensesToInsert = [];
+          // Gera um ID de grupo para vincular as parcelas (usando timestamp + random simples se não tiver uuid)
+          // Se tiver a lib uuid instalada: const groupId = uuidv4();
+          // Aqui faremos um fallback simples para não quebrar seu projeto se faltar lib:
+          const groupId =
+            Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+          for (let i = 0; i < totalInstallments; i++) {
+            // Clona a data base
+            const installmentDate = new Date(date);
+            // Adiciona os meses
+            installmentDate.setMonth(installmentDate.getMonth() + i);
+
+            // Ajuste fino: Se hoje é dia 31 e o próximo mês só tem 30 dias, o JS pula para dia 1 do outro.
+            // Para simplicidade, o padrão do JS é aceitável, mas em apps financeiros robustos usamos bibliotecas como 'date-fns'.
+
+            expensesToInsert.push({
+              user_id: user.id,
+              descricao: description, // A numeração (1/X) será feita visualmente no front ou podemos concatenar aqui se preferir
+              valor: numericValue,
+              data_transacao: installmentDate.toISOString(),
+              pago: false,
+              parcela_atual: i + 1,
+              parcela_total: totalInstallments,
+              grupo_id: groupId,
+            });
+          }
+
+          // Insert em lote (Batch Insert)
+          const { error: insertError } = await supabase
+            .from("despesa")
+            .insert(expensesToInsert);
+
+          error = insertError;
+        } else {
+          // *** LÓGICA PADRÃO (ÚNICA) ***
+          const { error: insertError } = await supabase.from("despesa").insert({
+            user_id: user.id,
+            descricao: description,
+            valor: numericValue,
+            data_transacao: date.toISOString(),
+            pago: false,
+            parcela_atual: 1,
+            parcela_total: 1,
+            grupo_id: null,
+          });
+          error = insertError;
+        }
+      }
+
+      if (error) {
+        Alert.alert("Erro ao salvar", error.message);
+        setLoading(false);
+      } else {
+        setToastMessage(
+          transactionToEdit
+            ? "Despesa atualizada com sucesso!"
+            : isRecurring
+              ? `${installmentsCount} parcelas registradas!`
+              : "Despesa registrada com sucesso!",
+        );
+        setShowToast(true);
+
+        setTimeout(() => {
+          setDescription("");
+          setValue("");
+          setDate(new Date());
+          setIsRecurring(false); // Reseta switch
+          setInstallmentsCount("2");
+          navigation.setParams({ transactionToEdit: null });
+          navigation.navigate("Dashboard");
+          setLoading(false);
+          setShowToast(false);
+        }, 1500);
+      }
+    } catch (e) {
+      Alert.alert("Erro", e.message);
       setLoading(false);
-    } else {
-      // --- Lógica do Toast em vez de Alert ---
-      setToastMessage(
-        transactionToEdit
-          ? "Despesa atualizada com sucesso!"
-          : "Despesa registrada com sucesso!"
-      );
-      setShowToast(true);
-
-      // Aguarda 1.5 segundos para o usuário ler a mensagem antes de sair
-      setTimeout(() => {
-        setDescription("");
-        setValue("");
-        setDate(new Date());
-        navigation.setParams({ transactionToEdit: null });
-        navigation.navigate("Dashboard");
-        setLoading(false); // Libera o loading apenas ao sair
-        setShowToast(false);
-      }, 1500);
     }
   };
 
@@ -136,6 +206,7 @@ export default function AddExpenseScreen({ navigation, route }) {
     setDescription("");
     setValue("");
     setDate(new Date());
+    setIsRecurring(false);
   };
 
   return (
@@ -148,12 +219,12 @@ export default function AddExpenseScreen({ navigation, route }) {
         <Text style={styles.label}>Descrição</Text>
         <TextInput
           style={styles.input}
-          placeholder="Ex: Supermercado"
+          placeholder="Ex: Compra Notebook"
           value={description}
           onChangeText={setDescription}
         />
 
-        <Text style={styles.label}>Valor (R$)</Text>
+        <Text style={styles.label}>Valor da Parcela (R$)</Text>
         <TextInput
           style={styles.input}
           placeholder="0,00"
@@ -162,7 +233,9 @@ export default function AddExpenseScreen({ navigation, route }) {
           onChangeText={handleAmountChange}
         />
 
-        <Text style={styles.label}>Data da Transação</Text>
+        <Text style={styles.label}>
+          {isRecurring ? "Data da 1ª Parcela" : "Data da Transação"}
+        </Text>
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
@@ -181,14 +254,46 @@ export default function AddExpenseScreen({ navigation, route }) {
           />
         )}
 
+        {/* --- Seção de Recorrência/Parcelamento --- */}
+        {!transactionToEdit && (
+          <View style={styles.recurringContainer}>
+            <View style={styles.switchRow}>
+              <Text style={styles.labelSwitch}>Cadastrar Parcelado?</Text>
+              <Switch
+                trackColor={{ false: "#767577", true: "#e74c3c" }}
+                thumbColor={isRecurring ? "#fff" : "#f4f3f4"}
+                onValueChange={() =>
+                  setIsRecurring((previousState) => !previousState)
+                }
+                value={isRecurring}
+              />
+            </View>
+
+            {isRecurring && (
+              <View style={styles.installmentsRow}>
+                <Text style={styles.label}>Nº Parcelas:</Text>
+                <TextInput
+                  style={[styles.input, styles.inputSmall]}
+                  keyboardType="numeric"
+                  value={installmentsCount}
+                  onChangeText={setInstallmentsCount}
+                  maxLength={3}
+                />
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={styles.buttonContainer}>
           <Button
             title={
               loading
                 ? "Salvando..."
                 : transactionToEdit
-                ? "Atualizar"
-                : "Salvar Despesa"
+                  ? "Atualizar"
+                  : isRecurring
+                    ? "Gerar Parcelas"
+                    : "Salvar Despesa"
             }
             color="#e74c3c"
             onPress={handleSave}
@@ -206,7 +311,6 @@ export default function AddExpenseScreen({ navigation, route }) {
           )}
         </View>
 
-        {/* --- Componente Toast Personalizado --- */}
         {showToast && (
           <View style={styles.toastContainer}>
             <Text style={styles.toastText}>{toastMessage}</Text>

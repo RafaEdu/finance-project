@@ -18,7 +18,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Importação do AsyncStorage
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import { styles } from "./DashboardScreen.styles";
@@ -142,11 +142,11 @@ export default function DashboardScreen({ navigation }) {
 
       const sumIncome = incomes.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
       const sumExpense = expenses.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
 
       setTotalIncome(sumIncome);
@@ -161,7 +161,7 @@ export default function DashboardScreen({ navigation }) {
       const allTransactions = [...formattedIncomes, ...formattedExpenses];
 
       allTransactions.sort(
-        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao)
+        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao),
       );
 
       setTransactions(allTransactions);
@@ -204,11 +204,11 @@ export default function DashboardScreen({ navigation }) {
 
     const sumMonthIncome = (monthIncomes || []).reduce(
       (acc, curr) => acc + Number(curr.valor),
-      0
+      0,
     );
     const sumMonthExpense = (monthExpenses || []).reduce(
       (acc, curr) => acc + Number(curr.valor),
-      0
+      0,
     );
 
     setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
@@ -245,14 +245,14 @@ export default function DashboardScreen({ navigation }) {
             setLoading(false);
           },
         },
-      ]
+      ],
     );
   };
 
   useFocusEffect(
     useCallback(() => {
       fetchDashboardData();
-    }, [currentDate, filterType])
+    }, [currentDate, filterType]),
   );
 
   const onRefresh = () => {
@@ -298,7 +298,7 @@ export default function DashboardScreen({ navigation }) {
 
   // --- Lógica de Filtro no Cliente ---
   const filteredTransactions = transactions.filter((item) =>
-    item.descricao.toLowerCase().includes(searchText.toLowerCase())
+    item.descricao.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   if (loading && !refreshing) {
@@ -311,6 +311,15 @@ export default function DashboardScreen({ navigation }) {
 
   const renderTransactionItem = (item) => {
     const isIncome = item.type === "income";
+
+    // --- NOVA LÓGICA DE EXIBIÇÃO DE PARCELAS ---
+    // Verifica se existem dados de parcela e se o total é maior que 1
+    const installmentText =
+      item.parcela_total && item.parcela_total > 1
+        ? ` (${item.parcela_atual}/${item.parcela_total})`
+        : "";
+    // ---------------------------------------------
+
     return (
       <View key={`${item.type}-${item.id}`} style={styles.transactionCard}>
         <View style={styles.iconWrapper}>
@@ -321,7 +330,11 @@ export default function DashboardScreen({ navigation }) {
           />
         </View>
         <View style={styles.transactionInfo}>
-          <Text style={styles.transactionTitle}>{item.descricao}</Text>
+          {/* Adicionado {installmentText} ao final da descrição */}
+          <Text style={styles.transactionTitle}>
+            {item.descricao}
+            {installmentText}
+          </Text>
           <Text style={styles.transactionDate}>
             {formatTransactionDate(item.data_transacao)}
           </Text>
@@ -415,8 +428,6 @@ export default function DashboardScreen({ navigation }) {
           />
         )}
 
-        {/* 1. Movido o summaryContainer (Cards de Receita/Despesa) para CIMA
-         */}
         <View style={styles.summaryContainer}>
           <View style={[styles.summaryCard, styles.incomeCard]}>
             <Ionicons name="trending-up" size={24} color="#27ae60" />
@@ -434,8 +445,6 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
-        {/* 2. Botão de Toggle para o Saldo (Seta para expandir/colapsar)
-         */}
         <TouchableOpacity
           style={styles.balanceToggleContainer}
           onPress={toggleBalanceVisibility}
@@ -450,8 +459,6 @@ export default function DashboardScreen({ navigation }) {
           />
         </TouchableOpacity>
 
-        {/* 3. Card de Saldo agora condicional e ABAIXO dos resumos
-         */}
         {isBalanceVisible && (
           <View style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>
@@ -461,7 +468,6 @@ export default function DashboardScreen({ navigation }) {
 
             {filterType === "day" && (
               <View style={styles.secondaryBalanceContainer}>
-                {/* 4. Texto alterado conforme solicitado */}
                 <Text style={styles.balanceLabel}>SALDO MENSAL ACOMULADO</Text>
                 <Text style={[styles.balanceValue, { fontSize: 22 }]}>
                   {formatCurrency(monthToDateBalance)}
