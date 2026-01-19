@@ -9,7 +9,7 @@
 - [x] Opção para colocar o nome no perfil;
 - [x] Enviar código no e-mail para alterar a senha;
 - [x] Liberar cadastro de movimentação em datas futuras
-- [ ] Cadastrar opção de parcela
+- [x] Cadastrar opção de parcela
 - [ ] Criar abas faturas
 
 ### Ajustes a serem feitos:

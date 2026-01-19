@@ -3,56 +3,59 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f6fa",
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
-  profileIcon: {
-    marginRight: 15,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
   greeting: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
+    color: "#2c3e50",
     marginBottom: 20,
   },
-
-  // --- Filtros ---
+  profileIcon: {
+    marginRight: 15,
+  },
+  // Filtros
   filterContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginBottom: 15,
-    padding: 4,
     justifyContent: "space-between",
+    marginBottom: 15,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 10,
+    padding: 2,
   },
   filterButton: {
     flex: 1,
     paddingVertical: 8,
     alignItems: "center",
-    borderRadius: 6,
+    borderRadius: 8,
   },
   activeFilterButton: {
-    backgroundColor: "#0000ff",
+    backgroundColor: "#fff",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
   },
   filterText: {
     fontSize: 14,
+    color: "#7f8c8d",
     fontWeight: "600",
-    color: "#666",
   },
   activeFilterText: {
-    color: "#fff",
+    color: "#0000ff",
+    fontWeight: "bold",
   },
-
-  // --- Navegação de Data ---
+  // Navegação de Data
   dateNavContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -60,92 +63,86 @@ export const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: "#fff",
     padding: 10,
-    borderRadius: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  dateNavButton: {
+    padding: 5,
   },
   dateNavText: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
   },
-  dateNavButton: {
-    padding: 5,
-  },
-
-  // --- Resumo (Movido para cima do BalanceCard logicamente, estilos mantidos) ---
+  // Resumo (Cards Pequenos)
   summaryContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 15, // Reduzi um pouco a margem inferior para aproximar do botão toggle
+    marginBottom: 10,
   },
   summaryCard: {
-    flex: 0.48,
+    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderRadius: 10,
+    padding: 15,
+    marginHorizontal: 5,
+    alignItems: "center",
     elevation: 2,
-    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   incomeCard: {
-    borderColor: "rgba(39, 174, 96, 0.2)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#27ae60",
   },
   expenseCard: {
-    borderColor: "rgba(231, 76, 60, 0.2)",
+    borderLeftWidth: 4,
+    borderLeftColor: "#e74c3c",
   },
   summaryLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 8,
-    marginBottom: 4,
+    fontSize: 12,
+    color: "#7f8c8d",
+    marginTop: 5,
   },
   summaryValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
+    marginTop: 2,
   },
-
-  // --- Toggle do Saldo (Novos Estilos) ---
+  // Saldo Toggle
   balanceToggleContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15,
-    paddingVertical: 5,
+    marginBottom: 10,
+    padding: 5,
   },
   balanceToggleText: {
     fontSize: 14,
     color: "#666",
     marginRight: 5,
-    fontWeight: "500",
   },
-
-  // --- Cards de Saldo ---
+  // Card de Saldo Grande
   balanceCard: {
-    backgroundColor: "#0000ff",
-    borderRadius: 16,
+    backgroundColor: "#34495e",
+    borderRadius: 15,
     padding: 20,
-    marginBottom: 25, // Margem para separar do título da lista
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
     alignItems: "center",
+    marginBottom: 20,
+    elevation: 4,
   },
   balanceLabel: {
-    color: "rgba(255,255,255,0.8)",
     fontSize: 14,
+    color: "#bdc3c7",
     marginBottom: 5,
     textTransform: "uppercase",
   },
   balanceValue: {
-    color: "#fff",
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
+    color: "#fff",
   },
   secondaryBalanceContainer: {
     marginTop: 15,
@@ -155,88 +152,100 @@ export const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-
-  // --- Lista ---
+  // Lista de Transações
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
+    color: "#2c3e50",
+    marginBottom: 10,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 10,
-    paddingVertical: 8,
     marginBottom: 15,
+    height: 40,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#eee",
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
     flex: 1,
+    height: "100%",
+  },
+  emptyState: {
+    alignItems: "center",
+    marginTop: 30,
+  },
+  emptyText: {
+    color: "#95a5a6",
     fontSize: 16,
-    color: "#333",
-    paddingVertical: 4,
   },
   transactionCard: {
     flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#fff",
-    padding: 16,
     borderRadius: 12,
+    padding: 15,
     marginBottom: 10,
+    alignItems: "center",
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f0",
+    marginRight: 15,
     justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
   },
   transactionInfo: {
     flex: 1,
+    justifyContent: "center",
+  },
+  // --- NOVOS ESTILOS PARA TÍTULO E BADGE ---
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap", // Garante que se o texto for muito longo, quebre linha sem "estourar" o layout
+    marginBottom: 4,
   },
   transactionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: "#2c3e50",
+    marginRight: 8, // Espaço entre o texto e o badge
   },
+  installmentBadge: {
+    backgroundColor: "#e74c3c", // Fundo vermelho solicitado
+    borderRadius: 12, // Bordas bem arredondadas (estilo "Pill")
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: "flex-start", // Garante que o badge tenha o tamanho do texto
+  },
+  installmentText: {
+    color: "#fff", // Texto branco para contraste com o vermelho
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  // ----------------------------------------
   transactionDate: {
     fontSize: 12,
-    color: "#999",
-    marginTop: 2,
+    color: "#95a5a6",
   },
   transactionValue: {
     fontSize: 16,
     fontWeight: "bold",
-    marginRight: 10,
+    marginBottom: 5,
   },
   actionsContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "flex-end",
   },
   actionButton: {
-    padding: 8,
-    marginLeft: 5,
-  },
-  emptyState: {
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: "#999",
-    fontSize: 16,
+    marginLeft: 10,
+    padding: 5,
   },
 });

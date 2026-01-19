@@ -26,6 +26,7 @@ import { styles } from "./DashboardScreen.styles";
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
 
+  // loading inicia true para mostrar spinner APENAS na primeira renderização
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -47,7 +48,6 @@ export default function DashboardScreen({ navigation }) {
   const [monthToDateBalance, setMonthToDateBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
 
-  // --- LÓGICA DE EXIBIÇÃO DO NOME ---
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
@@ -64,7 +64,6 @@ export default function DashboardScreen({ navigation }) {
     });
   }, [navigation]);
 
-  // Carregar estado de visibilidade do saldo ao iniciar
   useEffect(() => {
     const loadBalanceSettings = async () => {
       try {
@@ -79,7 +78,6 @@ export default function DashboardScreen({ navigation }) {
     loadBalanceSettings();
   }, []);
 
-  // Alternar e salvar visibilidade do saldo
   const toggleBalanceVisibility = async () => {
     const newValue = !isBalanceVisible;
     setIsBalanceVisible(newValue);
@@ -116,10 +114,15 @@ export default function DashboardScreen({ navigation }) {
     };
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (retryCount = 0) => {
     try {
+      // UX CORRIGIDA: Não forçamos setLoading(true) aqui.
+      // Isso evita que a tela pisque (fique branca com spinner) ao trocar datas.
+      // O loading só é true na inicialização (state inicial) ou no refresh manual.
+
       const { startISO, endISO } = getDateRange(currentDate, filterType);
 
+      // 1. Busca Receitas
       const { data: incomes, error: incomeError } = await supabase
         .from("receita")
         .select("*")
@@ -130,6 +133,7 @@ export default function DashboardScreen({ navigation }) {
 
       if (incomeError) throw incomeError;
 
+      // 2. Busca Despesas
       const { data: expenses, error: expenseError } = await supabase
         .from("despesa")
         .select("*")
@@ -140,28 +144,34 @@ export default function DashboardScreen({ navigation }) {
 
       if (expenseError) throw expenseError;
 
-      const sumIncome = incomes.reduce(
+      const safeIncomes = incomes || [];
+      const safeExpenses = expenses || [];
+
+      const sumIncome = safeIncomes.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0,
+        0
       );
-      const sumExpense = expenses.reduce(
+      const sumExpense = safeExpenses.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0,
+        0
       );
 
       setTotalIncome(sumIncome);
       setTotalExpense(sumExpense);
       setBalance(sumIncome - sumExpense);
 
-      const formattedIncomes = incomes.map((i) => ({ ...i, type: "income" }));
-      const formattedExpenses = expenses.map((e) => ({
+      const formattedIncomes = safeIncomes.map((i) => ({
+        ...i,
+        type: "income",
+      }));
+      const formattedExpenses = safeExpenses.map((e) => ({
         ...e,
         type: "expense",
       }));
-      const allTransactions = [...formattedIncomes, ...formattedExpenses];
 
+      const allTransactions = [...formattedIncomes, ...formattedExpenses];
       allTransactions.sort(
-        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao),
+        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao)
       );
 
       setTransactions(allTransactions);
@@ -170,48 +180,66 @@ export default function DashboardScreen({ navigation }) {
         await fetchMonthToDateBalance(currentDate);
       }
     } catch (error) {
-      console.error("Erro ao carregar dashboard:", error.message);
+      // Lógica de Retry Silencioso para Token Expirado (JWT)
+      const errorString = JSON.stringify(error).toLowerCase();
+      const isJwtError =
+        errorString.includes("jwt") ||
+        (error.message && error.message.toLowerCase().includes("jwt"));
+
+      if (isJwtError && retryCount < 3) {
+        // Tenta renovar a sessão silenciosamente
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError) {
+          return fetchDashboardData(retryCount + 1);
+        }
+      }
+      console.log("Erro ao carregar dashboard:", error.message || error);
     } finally {
+      // Garante que o loading inicial ou refresh sumam
       setLoading(false);
       setRefreshing(false);
     }
   };
 
   const fetchMonthToDateBalance = async (selectedDate) => {
-    const startOfMonth = new Date(selectedDate);
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    try {
+      const startOfMonth = new Date(selectedDate);
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
 
-    const startISO = startOfMonth.toISOString();
-    const endISO = endOfDay.toISOString();
+      const startISO = startOfMonth.toISOString();
+      const endISO = endOfDay.toISOString();
 
-    const { data: monthIncomes } = await supabase
-      .from("receita")
-      .select("valor")
-      .eq("user_id", user.id)
-      .gte("data_transacao", startISO)
-      .lte("data_transacao", endISO);
+      const { data: monthIncomes } = await supabase
+        .from("receita")
+        .select("valor")
+        .eq("user_id", user.id)
+        .gte("data_transacao", startISO)
+        .lte("data_transacao", endISO);
 
-    const { data: monthExpenses } = await supabase
-      .from("despesa")
-      .select("valor")
-      .eq("user_id", user.id)
-      .gte("data_transacao", startISO)
-      .lte("data_transacao", endISO);
+      const { data: monthExpenses } = await supabase
+        .from("despesa")
+        .select("valor")
+        .eq("user_id", user.id)
+        .gte("data_transacao", startISO)
+        .lte("data_transacao", endISO);
 
-    const sumMonthIncome = (monthIncomes || []).reduce(
-      (acc, curr) => acc + Number(curr.valor),
-      0,
-    );
-    const sumMonthExpense = (monthExpenses || []).reduce(
-      (acc, curr) => acc + Number(curr.valor),
-      0,
-    );
+      const sumMonthIncome = (monthIncomes || []).reduce(
+        (acc, curr) => acc + Number(curr.valor),
+        0
+      );
+      const sumMonthExpense = (monthExpenses || []).reduce(
+        (acc, curr) => acc + Number(curr.valor),
+        0
+      );
 
-    setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
+      setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
+    } catch (error) {
+      // Ignora erro de saldo mensal silenciosamente
+    }
   };
 
   const handleEdit = (item) => {
@@ -229,30 +257,36 @@ export default function DashboardScreen({ navigation }) {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
+            // Aqui mantemos loading visual pois é uma ação destrutiva
             setLoading(true);
             const tableName = item.type === "income" ? "receita" : "despesa";
 
-            const { error } = await supabase
-              .from(tableName)
-              .delete()
-              .eq("id", item.id);
-
-            if (error) {
-              Alert.alert("Erro", "Não foi possível excluir.");
-            } else {
-              fetchDashboardData();
+            try {
+              const { error } = await supabase
+                .from(tableName)
+                .delete()
+                .eq("id", item.id);
+              if (error) {
+                Alert.alert("Erro", "Não foi possível excluir.");
+              } else {
+                fetchDashboardData();
+              }
+            } catch (e) {
+              Alert.alert("Erro", "Falha de conexão.");
+            } finally {
+              setLoading(false);
             }
-            setLoading(false);
           },
         },
-      ],
+      ]
     );
   };
 
   useFocusEffect(
     useCallback(() => {
+      // Chama busca de dados sempre que a tela ganha foco ou filtros mudam
       fetchDashboardData();
-    }, [currentDate, filterType]),
+    }, [currentDate, filterType])
   );
 
   const onRefresh = () => {
@@ -261,6 +295,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const changeDate = (direction) => {
+    // Apenas atualiza a data. O useEffect/useFocusEffect vai disparar o fetch.
     const newDate = new Date(currentDate);
     if (filterType === "day") newDate.setDate(newDate.getDate() + direction);
     else if (filterType === "month")
@@ -276,7 +311,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const formatCurrency = (value) => {
-    return value.toLocaleString("pt-BR", {
+    return (value || 0).toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
@@ -293,15 +328,21 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const formatTransactionDate = (dateString) => {
+    if (!dateString) return "";
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
-  // --- Lógica de Filtro no Cliente ---
   const filteredTransactions = transactions.filter((item) =>
-    item.descricao.toLowerCase().includes(searchText.toLowerCase()),
+    (item.descricao || "").toLowerCase().includes(searchText.toLowerCase())
   );
 
-  if (loading && !refreshing) {
+  // Loading SOMENTE se for a primeira carga E não estiver fazendo refresh manual
+  if (
+    loading &&
+    !refreshing &&
+    transactions.length === 0 &&
+    totalIncome === 0
+  ) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -311,14 +352,7 @@ export default function DashboardScreen({ navigation }) {
 
   const renderTransactionItem = (item) => {
     const isIncome = item.type === "income";
-
-    // --- NOVA LÓGICA DE EXIBIÇÃO DE PARCELAS ---
-    // Verifica se existem dados de parcela e se o total é maior que 1
-    const installmentText =
-      item.parcela_total && item.parcela_total > 1
-        ? ` (${item.parcela_atual}/${item.parcela_total})`
-        : "";
-    // ---------------------------------------------
+    const isInstallment = item.parcela_total && item.parcela_total > 1;
 
     return (
       <View key={`${item.type}-${item.id}`} style={styles.transactionCard}>
@@ -329,12 +363,18 @@ export default function DashboardScreen({ navigation }) {
             color={isIncome ? "#27ae60" : "#e74c3c"}
           />
         </View>
+
         <View style={styles.transactionInfo}>
-          {/* Adicionado {installmentText} ao final da descrição */}
-          <Text style={styles.transactionTitle}>
-            {item.descricao}
-            {installmentText}
-          </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.transactionTitle}>{item.descricao}</Text>
+            {isInstallment && (
+              <View style={styles.installmentBadge}>
+                <Text style={styles.installmentText}>
+                  {item.parcela_atual}ª Parcela
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.transactionDate}>
             {formatTransactionDate(item.data_transacao)}
           </Text>
@@ -465,10 +505,9 @@ export default function DashboardScreen({ navigation }) {
               {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
             </Text>
             <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
-
             {filterType === "day" && (
               <View style={styles.secondaryBalanceContainer}>
-                <Text style={styles.balanceLabel}>SALDO MENSAL ACOMULADO</Text>
+                <Text style={styles.balanceLabel}>SALDO MENSAL ACUMULADO</Text>
                 <Text style={[styles.balanceValue, { fontSize: 22 }]}>
                   {formatCurrency(monthToDateBalance)}
                 </Text>
