@@ -34,7 +34,7 @@ unique (user_id, nome)
 create table public.receita (
 id uuid not null default gen_random_uuid(),
 user_id uuid not null references auth.users(id) on delete cascade,
-categoria_id uuid references public.categoria_receita(id) on delete set null
+categoria_id uuid references public.categoria_receita(id) on delete set null,
 descricao text not null,
 valor numeric(12, 2) not null, -- Até 12 dígitos, com 2 casas decimais
 data_transacao timestamptz not null default now(),
@@ -53,6 +53,10 @@ descricao text not null,
 valor numeric(12, 2) not null,
 data_transacao timestamptz not null default now(),
 pago boolean default false, -- Para controlar se já foi pago
+-- Colunas para Parcelamento
+parcela_atual integer default 1,
+parcela_total integer default 1,
+grupo_id uuid default gen_random_uuid(), -- Identificador para agrupar parcelas
 created_at timestamptz default now(),
 
 primary key (id)
@@ -64,6 +68,8 @@ create index idx_receita_user on public.receita(user_id);
 create index idx_despesa_user on public.despesa(user_id);
 create index idx_receita_data on public.receita(data_transacao);
 create index idx_despesa_data on public.despesa(data_transacao);
+-- Índice útil para buscar todas as parcelas de uma mesma compra
+create index idx_despesa_grupo on public.despesa(grupo_id);
 ```
 
 ### =========================================================
@@ -165,5 +171,4 @@ on public.despesa for update using (auth.uid() = user_id);
 
 create policy "Usuários podem deletar suas despesas"
 on public.despesa for delete using (auth.uid() = user_id);
-
 ```
