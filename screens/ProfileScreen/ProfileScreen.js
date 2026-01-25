@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker"; // Import do ImagePicker
+import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { styles } from "./ProfileScreen.styles";
@@ -53,12 +53,25 @@ export default function ProfileScreen({ navigation }) {
     ]);
   };
 
-  // Função para abrir a galeria e selecionar imagem
+  // Função para abrir a galeria e selecionar imagem (CORRIGIDA)
   const pickImage = async () => {
     try {
-      // Abre a galeria
+      // 1. Solicitar permissão explicitamente
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Permissão necessária",
+          "Precisamos de acesso à sua galeria para alterar a foto.",
+        );
+        return;
+      }
+
+      // 2. Abre a galeria com as opções corretas
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.Images, // CORRIGIDO: De MediaTypeOptions para MediaType
+        // CORREÇÃO AQUI: Usa MediaTypeOptions em vez de MediaType
+        mediaTypes: ImagePicker.MediaType,
         allowsEditing: true, // Permite cortar/editar
         aspect: [1, 1], // Formato quadrado
         quality: 1, // Qualidade máxima
@@ -69,6 +82,7 @@ export default function ProfileScreen({ navigation }) {
         await uploadImage(result.assets[0].uri);
       }
     } catch (error) {
+      console.error("Erro no pickImage:", error); // Log para ajudar no debug
       Alert.alert("Erro", "Erro ao abrir galeria.");
     }
   };
@@ -118,7 +132,7 @@ export default function ProfileScreen({ navigation }) {
       console.log(error);
       Alert.alert(
         "Erro no Upload",
-        error.message || "Não foi possível enviar a imagem."
+        error.message || "Não foi possível enviar a imagem.",
       );
     } finally {
       setUploadingImage(false);
@@ -167,7 +181,7 @@ export default function ProfileScreen({ navigation }) {
               setNewPassword("");
             },
           },
-        ]
+        ],
       );
     }
   };
