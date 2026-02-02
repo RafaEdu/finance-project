@@ -9,6 +9,8 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -43,7 +45,7 @@ export default function AddIncomeScreen({ navigation, route }) {
         setDate(new Date());
       }
       setShowToast(false);
-    }, [transactionToEdit])
+    }, [transactionToEdit]),
   );
 
   const handleAmountChange = (text) => {
@@ -108,11 +110,10 @@ export default function AddIncomeScreen({ navigation, route }) {
       Alert.alert("Erro ao salvar", error.message);
       setLoading(false);
     } else {
-      // --- Lógica do Toast ---
       setToastMessage(
         transactionToEdit
           ? "Receita atualizada com sucesso!"
-          : "Receita registrada com sucesso!"
+          : "Receita registrada com sucesso!",
       );
       setShowToast(true);
 
@@ -136,80 +137,91 @@ export default function AddIncomeScreen({ navigation, route }) {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
-        <Text style={styles.title}>
-          {transactionToEdit ? "Editar Receita" : "Nova Receita"}
-        </Text>
-
-        <Text style={styles.label}>Descrição</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ex: Salário"
-          value={description}
-          onChangeText={setDescription}
-        />
-
-        <Text style={styles.label}>Valor (R$)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="0,00"
-          keyboardType="numeric"
-          value={value}
-          onChangeText={handleAmountChange}
-        />
-
-        <Text style={styles.label}>Data da Transação</Text>
-        <TouchableOpacity
-          style={styles.dateButton}
-          onPress={() => setShowDatePicker(true)}
+    // KeyboardAvoidingView para empurrar a tela
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        {/* ScrollView adicionado para permitir rolar quando o teclado aperta a tela */}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.dateText}>
-            {date.toLocaleDateString("pt-BR")}
-          </Text>
-        </TouchableOpacity>
+          <View style={styles.container}>
+            <Text style={styles.title}>
+              {transactionToEdit ? "Editar Receita" : "Nova Receita"}
+            </Text>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
+            <Text style={styles.label}>Descrição</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: Salário"
+              value={description}
+              onChangeText={setDescription}
+            />
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title={
-              loading
-                ? "Salvando..."
-                : transactionToEdit
-                ? "Atualizar"
-                : "Salvar Receita"
-            }
-            color="#27ae60"
-            onPress={handleSave}
-            disabled={loading}
-          />
+            <Text style={styles.label}>Valor (R$)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="0,00"
+              keyboardType="numeric"
+              value={value}
+              onChangeText={handleAmountChange}
+            />
 
-          {transactionToEdit && (
-            <View style={{ marginTop: 10 }}>
-              <Button
-                title="Cancelar Edição"
-                color="gray"
-                onPress={handleCancelEdit}
+            <Text style={styles.label}>Data da Transação</Text>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.dateText}>
+                {date.toLocaleDateString("pt-BR")}
+              </Text>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
               />
-            </View>
-          )}
-        </View>
+            )}
 
-        {/* --- Componente Toast Personalizado --- */}
-        {showToast && (
-          <View style={styles.toastContainer}>
-            <Text style={styles.toastText}>{toastMessage}</Text>
+            <View style={styles.buttonContainer}>
+              <Button
+                title={
+                  loading
+                    ? "Salvando..."
+                    : transactionToEdit
+                      ? "Atualizar"
+                      : "Salvar Receita"
+                }
+                color="#27ae60"
+                onPress={handleSave}
+                disabled={loading}
+              />
+
+              {transactionToEdit && (
+                <View style={{ marginTop: 10 }}>
+                  <Button
+                    title="Cancelar Edição"
+                    color="gray"
+                    onPress={handleCancelEdit}
+                  />
+                </View>
+              )}
+            </View>
+
+            {showToast && (
+              <View style={styles.toastContainer}>
+                <Text style={styles.toastText}>{toastMessage}</Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
-    </TouchableWithoutFeedback>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }

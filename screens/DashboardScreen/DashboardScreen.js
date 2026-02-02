@@ -14,7 +14,8 @@ import {
   Platform,
   Alert,
   TextInput,
-  Image, // Importar Image
+  Image,
+  KeyboardAvoidingView, // Importante
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -59,7 +60,7 @@ export default function DashboardScreen({ navigation }) {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
-          style={[styles.profileIcon, { overflow: "hidden", borderRadius: 15 }]} // Ajuste de estilo para imagem redonda
+          style={[styles.profileIcon, { overflow: "hidden", borderRadius: 15 }]}
           onPress={() => navigation.navigate("Profile")}
         >
           {avatarUrl ? (
@@ -73,7 +74,6 @@ export default function DashboardScreen({ navigation }) {
         </TouchableOpacity>
       ),
     });
-    // Adicionamos 'user' nas dependências para atualizar quando a foto mudar
   }, [navigation, user]);
 
   useEffect(() => {
@@ -157,11 +157,11 @@ export default function DashboardScreen({ navigation }) {
 
       const sumIncome = safeIncomes.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
       const sumExpense = safeExpenses.reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
 
       setTotalIncome(sumIncome);
@@ -179,7 +179,7 @@ export default function DashboardScreen({ navigation }) {
 
       const allTransactions = [...formattedIncomes, ...formattedExpenses];
       allTransactions.sort(
-        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao)
+        (a, b) => new Date(b.data_transacao) - new Date(a.data_transacao),
       );
 
       setTransactions(allTransactions);
@@ -235,11 +235,11 @@ export default function DashboardScreen({ navigation }) {
 
       const sumMonthIncome = (monthIncomes || []).reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
       const sumMonthExpense = (monthExpenses || []).reduce(
         (acc, curr) => acc + Number(curr.valor),
-        0
+        0,
       );
 
       setMonthToDateBalance(sumMonthIncome - sumMonthExpense);
@@ -283,14 +283,14 @@ export default function DashboardScreen({ navigation }) {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   useFocusEffect(
     useCallback(() => {
       fetchDashboardData();
-    }, [currentDate, filterType])
+    }, [currentDate, filterType]),
   );
 
   const onRefresh = () => {
@@ -336,7 +336,7 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const filteredTransactions = transactions.filter((item) =>
-    (item.descricao || "").toLowerCase().includes(searchText.toLowerCase())
+    (item.descricao || "").toLowerCase().includes(searchText.toLowerCase()),
   );
 
   if (
@@ -412,153 +412,165 @@ export default function DashboardScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Text style={styles.greeting}>Olá, {displayName}</Text>
-
-        <View style={styles.filterContainer}>
-          {["day", "month", "year"].map((type) => (
-            <TouchableOpacity
-              key={type}
-              style={[
-                styles.filterButton,
-                filterType === type && styles.activeFilterButton,
-              ]}
-              onPress={() => setFilterType(type)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  filterType === type && styles.activeFilterText,
-                ]}
-              >
-                {type === "day" ? "Dia" : type === "month" ? "Mês" : "Ano"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.dateNavContainer}>
-          <TouchableOpacity
-            onPress={() => changeDate(-1)}
-            style={styles.dateNavButton}
-          >
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)}>
-            <Text style={styles.dateNavText}>{formatDisplayDate()}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => changeDate(1)}
-            style={styles.dateNavButton}
-          >
-            <Ionicons name="chevron-forward" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={currentDate}
-            mode="date"
-            display="default"
-            onChange={handleDatePickerChange}
-          />
-        )}
-
-        <View style={styles.summaryContainer}>
-          <View style={[styles.summaryCard, styles.incomeCard]}>
-            <Ionicons name="trending-up" size={24} color="#27ae60" />
-            <Text style={styles.summaryLabel}>Receitas</Text>
-            <Text style={[styles.summaryValue, { color: "#27ae60" }]}>
-              {formatCurrency(totalIncome)}
-            </Text>
-          </View>
-          <View style={[styles.summaryCard, styles.expenseCard]}>
-            <Ionicons name="trending-down" size={24} color="#e74c3c" />
-            <Text style={styles.summaryLabel}>Despesas</Text>
-            <Text style={[styles.summaryValue, { color: "#e74c3c" }]}>
-              {formatCurrency(totalExpense)}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.balanceToggleContainer}
-          onPress={toggleBalanceVisibility}
+    // Implementação do KeyboardAvoidingView com OFFSET para corrigir o problema da barra escondida
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // keyboardVerticalOffset compensa a altura do Header + Status Bar (aprox 100px no iOS)
+      keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      style={{ flex: 1 }}
+    >
+      <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          // Garante que toques nos itens da lista funcionem mesmo com teclado aberto
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.balanceToggleText}>
-            {isBalanceVisible ? "Ocultar Saldo Total" : "Ver Saldo Total"}
-          </Text>
-          <Ionicons
-            name={isBalanceVisible ? "chevron-up" : "chevron-down"}
-            size={20}
-            color="#666"
-          />
-        </TouchableOpacity>
+          <Text style={styles.greeting}>Olá, {displayName}</Text>
 
-        {isBalanceVisible && (
-          <View style={styles.balanceCard}>
-            <Text style={styles.balanceLabel}>
-              {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
-            </Text>
-            <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
-            {filterType === "day" && (
-              <View style={styles.secondaryBalanceContainer}>
-                <Text style={styles.balanceLabel}>SALDO MENSAL ACUMULADO</Text>
-                <Text style={[styles.balanceValue, { fontSize: 22 }]}>
-                  {formatCurrency(monthToDateBalance)}
+          <View style={styles.filterContainer}>
+            {["day", "month", "year"].map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={[
+                  styles.filterButton,
+                  filterType === type && styles.activeFilterButton,
+                ]}
+                onPress={() => setFilterType(type)}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    filterType === type && styles.activeFilterText,
+                  ]}
+                >
+                  {type === "day" ? "Dia" : type === "month" ? "Mês" : "Ano"}
                 </Text>
-              </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.dateNavContainer}>
+            <TouchableOpacity
+              onPress={() => changeDate(-1)}
+              style={styles.dateNavButton}
+            >
+              <Ionicons name="chevron-back" size={24} color="#333" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.dateNavText}>{formatDisplayDate()}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => changeDate(1)}
+              style={styles.dateNavButton}
+            >
+              <Ionicons name="chevron-forward" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={currentDate}
+              mode="date"
+              display="default"
+              onChange={handleDatePickerChange}
+            />
+          )}
+
+          <View style={styles.summaryContainer}>
+            <View style={[styles.summaryCard, styles.incomeCard]}>
+              <Ionicons name="trending-up" size={24} color="#27ae60" />
+              <Text style={styles.summaryLabel}>Receitas</Text>
+              <Text style={[styles.summaryValue, { color: "#27ae60" }]}>
+                {formatCurrency(totalIncome)}
+              </Text>
+            </View>
+            <View style={[styles.summaryCard, styles.expenseCard]}>
+              <Ionicons name="trending-down" size={24} color="#e74c3c" />
+              <Text style={styles.summaryLabel}>Despesas</Text>
+              <Text style={[styles.summaryValue, { color: "#e74c3c" }]}>
+                {formatCurrency(totalExpense)}
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.balanceToggleContainer}
+            onPress={toggleBalanceVisibility}
+          >
+            <Text style={styles.balanceToggleText}>
+              {isBalanceVisible ? "Ocultar Saldo Total" : "Ver Saldo Total"}
+            </Text>
+            <Ionicons
+              name={isBalanceVisible ? "chevron-up" : "chevron-down"}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+
+          {isBalanceVisible && (
+            <View style={styles.balanceCard}>
+              <Text style={styles.balanceLabel}>
+                {filterType === "day" ? "Saldo do Dia" : "Saldo do Período"}
+              </Text>
+              <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
+              {filterType === "day" && (
+                <View style={styles.secondaryBalanceContainer}>
+                  <Text style={styles.balanceLabel}>
+                    SALDO MENSAL ACUMULADO
+                  </Text>
+                  <Text style={[styles.balanceValue, { fontSize: 22 }]}>
+                    {formatCurrency(monthToDateBalance)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.sectionTitle}>
+            {filterType === "day"
+              ? "Movimentações do Dia"
+              : "Histórico do Período"}
+          </Text>
+
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search"
+              size={20}
+              color="#999"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Pesquisar movimentação..."
+              value={searchText}
+              onChangeText={setSearchText}
+              autoCapitalize="none"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText("")}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
             )}
           </View>
-        )}
 
-        <Text style={styles.sectionTitle}>
-          {filterType === "day"
-            ? "Movimentações do Dia"
-            : "Histórico do Período"}
-        </Text>
-
-        <View style={styles.searchContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#999"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Pesquisar movimentação..."
-            value={searchText}
-            onChangeText={setSearchText}
-            autoCapitalize="none"
-          />
-          {searchText.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchText("")}>
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
+          {filteredTransactions.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>
+                {transactions.length === 0
+                  ? "Nenhuma transação encontrada."
+                  : "Nenhum resultado para a pesquisa."}
+              </Text>
+            </View>
+          ) : (
+            <View>
+              {filteredTransactions.map((item) => renderTransactionItem(item))}
+            </View>
           )}
-        </View>
-
-        {filteredTransactions.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
-              {transactions.length === 0
-                ? "Nenhuma transação encontrada."
-                : "Nenhum resultado para a pesquisa."}
-            </Text>
-          </View>
-        ) : (
-          <View>
-            {filteredTransactions.map((item) => renderTransactionItem(item))}
-          </View>
-        )}
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
