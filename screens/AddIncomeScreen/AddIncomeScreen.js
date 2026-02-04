@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,54 +9,145 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Switch,
   ScrollView,
+  FlatList,
+  Modal,
   KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
+import { Ionicons } from "@expo/vector-icons"; // Certifique-se de ter instalado
 import { styles } from "./AddIncomeScreen.styles";
+
+// Função auxiliar para gerar UUID v4 válido (para o grupo_id)
+function generateUUID() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0,
+      v = c == "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export default function AddIncomeScreen({ navigation, route }) {
   const { user } = useAuth();
 
-  const [description, setDescription] = useState("");
-  const [value, setValue] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Modos: 'single' (Única) ou 'recurring' (Recorrente)
+  const [mode, setMode] = useState("single");
 
-  // Estados para o Toast
+  // Campos Comuns
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState(new Date());
+
+  // Campos Receita Única
+  const [singleValue, setSingleValue] = useState("");
+
+  // Campos Receita Recorrente
+  const [recurrenceCount, setRecurrenceCount] = useState(2); // Quantidade de meses/recebimentos
+  const [baseRecurrenceValue, setBaseRecurrenceValue] = useState(""); // Valor base formatado
+  const [areValuesDifferent, setAreValuesDifferent] = useState(false);
+  const [recurrenceList, setRecurrenceList] = useState([]); // Lista de objetos { id, value, date }
+
+  // Controles de UI
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCountPicker, setShowCountPicker] = useState(false); // Modal da seleção de qtd
+  const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
   const transactionToEdit = route.params?.transactionToEdit;
 
+  // --- EFEITOS E INICIALIZAÇÃO ---
+
   useFocusEffect(
     useCallback(() => {
+      resetForm();
       if (transactionToEdit) {
+        // Edição de item existente (trata como único por segurança na edição individual)
+        setMode("single");
         setDescription(transactionToEdit.descricao);
-        setValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
+        setSingleValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
-      } else {
-        setDescription("");
-        setValue("");
-        setDate(new Date());
       }
-      setShowToast(false);
     }, [transactionToEdit]),
   );
 
-  const handleAmountChange = (text) => {
-    const cleanValue = text.replace(/\D/g, "");
-    if (!cleanValue) {
-      setValue("");
-      return;
+  const resetForm = () => {
+    setMode("single");
+    setDescription("");
+    setDate(new Date());
+    setSingleValue("");
+    setRecurrenceCount(2);
+    setBaseRecurrenceValue("");
+    setAreValuesDifferent(false);
+    setRecurrenceList([]);
+    setShowToast(false);
+  };
+
+  // --- LÓGICA DE GERAÇÃO DA LISTA DE RECEBIMENTOS ---
+
+  useEffect(() => {
+    if (mode === "recurring") {
+      generateRecurrenceList();
     }
-    const numberValue = Number(cleanValue) / 100;
-    const formattedValue = numberValue.toFixed(2).replace(".", ",");
-    setValue(formattedValue);
+  }, [recurrenceCount, baseRecurrenceValue, date, mode]);
+
+  const generateRecurrenceList = () => {
+    const numericBaseValue = parseCurrency(baseRecurrenceValue);
+    const newList = [];
+
+    for (let i = 0; i < recurrenceCount; i++) {
+      const itemDate = new Date(date);
+      itemDate.setMonth(itemDate.getMonth() + i);
+
+      const existingItem = recurrenceList[i];
+      // Se já editou um valor específico e a flag está ativa, mantém o valor editado
+      const valueToUse =
+        areValuesDifferent && existingItem
+          ? existingItem.value
+          : numericBaseValue;
+
+      newList.push({
+        id: i + 1,
+        value: valueToUse,
+        displayValue: formatCurrency(valueToUse),
+        date: itemDate,
+      });
+    }
+    setRecurrenceList(newList);
+  };
+
+  // --- HANDLERS DE INPUT ---
+
+  const parseCurrency = (text) => {
+    if (!text) return 0;
+    const clean = text.replace(/\D/g, "");
+    return Number(clean) / 100;
+  };
+
+  const formatCurrency = (numberVal) => {
+    if (numberVal === undefined || numberVal === null) return "";
+    return numberVal.toFixed(2).replace(".", ",");
+  };
+
+  const handleSingleValueChange = (text) => {
+    const val = parseCurrency(text);
+    setSingleValue(val.toFixed(2).replace(".", ","));
+  };
+
+  const handleBaseRecurrenceValueChange = (text) => {
+    const val = parseCurrency(text);
+    setBaseRecurrenceValue(val.toFixed(2).replace(".", ","));
+  };
+
+  const handleIndividualValueChange = (text, index) => {
+    const val = parseCurrency(text);
+    const newList = [...recurrenceList];
+    newList[index].value = val;
+    newList[index].displayValue = val.toFixed(2).replace(".", ",");
+    setRecurrenceList(newList);
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -65,163 +156,332 @@ export default function AddIncomeScreen({ navigation, route }) {
     setDate(currentDate);
   };
 
+  // --- SALVAR ---
+
   const handleSave = async () => {
-    if (!description || !value) {
-      Alert.alert("Erro", "Preencha a descrição e o valor.");
+    if (!description) {
+      Alert.alert("Erro", "Preencha a descrição.");
+      return;
+    }
+
+    // Validações de valor
+    if (mode === "single" && parseCurrency(singleValue) <= 0) {
+      Alert.alert("Erro", "Insira um valor válido.");
+      return;
+    }
+    if (
+      mode === "recurring" &&
+      parseCurrency(baseRecurrenceValue) <= 0 &&
+      !areValuesDifferent
+    ) {
+      Alert.alert("Erro", "Insira um valor válido para os recebimentos.");
       return;
     }
 
     setLoading(true);
 
-    const numericValue = parseFloat(value.replace(/\./g, "").replace(",", "."));
+    try {
+      let error = null;
 
-    if (isNaN(numericValue)) {
-      Alert.alert("Erro", "Valor inválido.");
+      if (transactionToEdit) {
+        // Modo Edição (apenas do item selecionado)
+        const { error: updateError } = await supabase
+          .from("receita")
+          .update({
+            descricao: description,
+            valor: parseCurrency(singleValue),
+            data_transacao: date.toISOString(),
+          })
+          .eq("id", transactionToEdit.id);
+        error = updateError;
+      } else {
+        // Modo Criação
+        if (mode === "single") {
+          const { error: insertError } = await supabase.from("receita").insert({
+            user_id: user.id,
+            descricao: description,
+            valor: parseCurrency(singleValue),
+            data_transacao: date.toISOString(),
+            recebido: false,
+            parcela_atual: 1,
+            parcela_total: 1,
+            grupo_id: null,
+          });
+          error = insertError;
+        } else {
+          // Modo Recorrente (Bulk Insert)
+          const groupId = generateUUID();
+          const rowsToInsert = recurrenceList.map((item) => ({
+            user_id: user.id,
+            descricao: description,
+            valor: item.value,
+            data_transacao: item.date.toISOString(),
+            recebido: false,
+            parcela_atual: item.id,
+            parcela_total: recurrenceCount,
+            grupo_id: groupId,
+          }));
+
+          const { error: insertError } = await supabase
+            .from("receita")
+            .insert(rowsToInsert);
+
+          error = insertError;
+        }
+      }
+
+      if (error) {
+        Alert.alert("Erro ao salvar", error.message);
+      } else {
+        setToastMessage(
+          transactionToEdit ? "Receita atualizada!" : "Receita registrada!",
+        );
+        setShowToast(true);
+        setTimeout(() => {
+          navigation.setParams({ transactionToEdit: null });
+          navigation.navigate("Dashboard");
+          setShowToast(false);
+        }, 1500);
+      }
+    } catch (e) {
+      Alert.alert("Erro Crítico", e.message);
+    } finally {
       setLoading(false);
-      return;
-    }
-
-    let error = null;
-
-    if (transactionToEdit) {
-      const { error: updateError } = await supabase
-        .from("receita")
-        .update({
-          descricao: description,
-          valor: numericValue,
-          data_transacao: date.toISOString(),
-        })
-        .eq("id", transactionToEdit.id);
-
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase.from("receita").insert({
-        user_id: user.id,
-        descricao: description,
-        valor: numericValue,
-        data_transacao: date.toISOString(),
-        recebido: false,
-      });
-
-      error = insertError;
-    }
-
-    if (error) {
-      Alert.alert("Erro ao salvar", error.message);
-      setLoading(false);
-    } else {
-      setToastMessage(
-        transactionToEdit
-          ? "Receita atualizada com sucesso!"
-          : "Receita registrada com sucesso!",
-      );
-      setShowToast(true);
-
-      setTimeout(() => {
-        setDescription("");
-        setValue("");
-        setDate(new Date());
-        navigation.setParams({ transactionToEdit: null });
-        navigation.navigate("Dashboard");
-        setLoading(false);
-        setShowToast(false);
-      }, 1500);
     }
   };
 
-  const handleCancelEdit = () => {
-    navigation.setParams({ transactionToEdit: null });
-    setDescription("");
-    setValue("");
-    setDate(new Date());
-  };
+  // Renderiza cada linha da lista de recorrência
+  const renderRecurrenceItem = ({ item, index }) => (
+    <View style={styles.installmentRow}>
+      <Text style={styles.installmentLabel}>
+        {item.id}º Recebimento - {item.date.toLocaleDateString("pt-BR")}
+      </Text>
+      {areValuesDifferent ? (
+        <TextInput
+          style={styles.installmentInput}
+          value={item.displayValue}
+          onChangeText={(text) => handleIndividualValueChange(text, index)}
+          keyboardType="numeric"
+          placeholder="0,00"
+        />
+      ) : (
+        <Text style={styles.installmentValueFixed}>R$ {item.displayValue}</Text>
+      )}
+    </View>
+  );
 
   return (
-    // KeyboardAvoidingView para empurrar a tela
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        {/* ScrollView adicionado para permitir rolar quando o teclado aperta a tela */}
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.container}>
-            <Text style={styles.title}>
-              {transactionToEdit ? "Editar Receita" : "Nova Receita"}
-            </Text>
-
-            <Text style={styles.label}>Descrição</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ex: Salário"
-              value={description}
-              onChangeText={setDescription}
-            />
-
-            <Text style={styles.label}>Valor (R$)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="0,00"
-              keyboardType="numeric"
-              value={value}
-              onChangeText={handleAmountChange}
-            />
-
-            <Text style={styles.label}>Data da Transação</Text>
+      <View style={styles.container}>
+        {/* 1. SELETOR DE MODO (ABAS) - Só aparece se não for edição */}
+        {!transactionToEdit && (
+          <View style={styles.tabContainer}>
             <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
+              style={[
+                styles.tabButton,
+                mode === "single" && styles.tabButtonActive,
+              ]}
+              onPress={() => setMode("single")}
             >
-              <Text style={styles.dateText}>
-                {date.toLocaleDateString("pt-BR")}
+              <Text
+                style={[
+                  styles.tabText,
+                  mode === "single" && styles.tabTextActive,
+                ]}
+              >
+                Receita Única
               </Text>
             </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={date}
-                mode="date"
-                display="default"
-                onChange={handleDateChange}
-              />
-            )}
-
-            <View style={styles.buttonContainer}>
-              <Button
-                title={
-                  loading
-                    ? "Salvando..."
-                    : transactionToEdit
-                      ? "Atualizar"
-                      : "Salvar Receita"
-                }
-                color="#27ae60"
-                onPress={handleSave}
-                disabled={loading}
-              />
-
-              {transactionToEdit && (
-                <View style={{ marginTop: 10 }}>
-                  <Button
-                    title="Cancelar Edição"
-                    color="gray"
-                    onPress={handleCancelEdit}
-                  />
-                </View>
-              )}
-            </View>
-
-            {showToast && (
-              <View style={styles.toastContainer}>
-                <Text style={styles.toastText}>{toastMessage}</Text>
-              </View>
-            )}
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                mode === "recurring" && styles.tabButtonActive,
+              ]}
+              onPress={() => setMode("recurring")}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  mode === "recurring" && styles.tabTextActive,
+                ]}
+              >
+                Recorrente
+              </Text>
+            </TouchableOpacity>
           </View>
+        )}
+
+        <Text style={styles.title}>
+          {transactionToEdit
+            ? "Editar Receita"
+            : mode === "single"
+              ? "Nova Receita"
+              : "Nova Receita Recorrente"}
+        </Text>
+
+        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+          <Text style={styles.label}>Descrição</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: Salário, Projeto X..."
+            value={description}
+            onChangeText={setDescription}
+          />
+
+          {/* FORMULÁRIO MODO ÚNICO */}
+          {mode === "single" && (
+            <>
+              <Text style={styles.label}>Valor (R$)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0,00"
+                keyboardType="numeric"
+                value={singleValue}
+                onChangeText={handleSingleValueChange}
+              />
+
+              <Text style={styles.label}>Data do Recebimento</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateText}>
+                  {date.toLocaleDateString("pt-BR")}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* FORMULÁRIO MODO RECORRENTE */}
+          {mode === "recurring" && (
+            <>
+              <Text style={styles.label}>Data do 1º Recebimento</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateText}>
+                  {date.toLocaleDateString("pt-BR")}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.label}>Quantidade de Recebimentos</Text>
+              <TouchableOpacity
+                style={styles.selectorButton}
+                onPress={() => setShowCountPicker(true)}
+              >
+                <Text style={styles.selectorText}>{recurrenceCount}x</Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+
+              <Text style={styles.label}>Valor do Recebimento (R$)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="0,00"
+                keyboardType="numeric"
+                value={baseRecurrenceValue}
+                onChangeText={handleBaseRecurrenceValueChange}
+              />
+
+              <View style={styles.switchContainer}>
+                <Text style={styles.switchLabel}>
+                  Valores diferentes por mês?
+                </Text>
+                <Switch
+                  trackColor={{ false: "#767577", true: "#27ae60" }} // Cor verde para receita
+                  thumbColor={areValuesDifferent ? "#fff" : "#f4f3f4"}
+                  onValueChange={setAreValuesDifferent}
+                  value={areValuesDifferent}
+                />
+              </View>
+
+              <Text style={[styles.label, { marginTop: 20 }]}>
+                Detalhamento dos Recebimentos:
+              </Text>
+              <View style={styles.listContainer}>
+                {recurrenceList.map((item, index) => (
+                  <View key={item.id}>
+                    {renderRecurrenceItem({ item, index })}
+                    {index < recurrenceList.length - 1 && (
+                      <View style={styles.separator} />
+                    )}
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
         </ScrollView>
-      </TouchableWithoutFeedback>
+
+        <View style={styles.footerContainer}>
+          <Button
+            title={loading ? "Salvando..." : "Salvar"}
+            color="#27ae60" // Verde para receita
+            onPress={handleSave}
+            disabled={loading}
+          />
+          {transactionToEdit && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{ marginTop: 10, alignItems: "center" }}
+            >
+              <Text style={{ color: "gray" }}>Cancelar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
+
+        {/* Modal de Seleção de Quantidade */}
+        <Modal
+          visible={showCountPicker}
+          transparent={true}
+          animationType="slide"
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                Selecione a Qtd. de Recebimentos
+              </Text>
+              <FlatList
+                data={Array.from({ length: 47 }, (_, i) => i + 2)}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setRecurrenceCount(item);
+                      setShowCountPicker(false);
+                    }}
+                  >
+                    <Text style={styles.modalItemText}>{item}x</Text>
+                  </TouchableOpacity>
+                )}
+              />
+              <Button
+                title="Fechar"
+                onPress={() => setShowCountPicker(false)}
+                color="#27ae60"
+              />
+            </View>
+          </View>
+        </Modal>
+
+        {showToast && (
+          <View style={styles.toastContainer}>
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </View>
+        )}
+      </View>
     </KeyboardAvoidingView>
   );
 }

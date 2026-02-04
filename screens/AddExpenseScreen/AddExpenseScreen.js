@@ -316,7 +316,7 @@ export default function AddExpenseScreen({ navigation, route }) {
             ? "Editar Despesa"
             : mode === "single"
               ? "Nova Despesa"
-              : "Nova Recorrência"}
+              : "Nova Despesa Recorrente"}
         </Text>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>

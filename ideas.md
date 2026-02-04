@@ -8,11 +8,15 @@
 - [x] Remover escrita "(ACOMULADO)" virando "SALDO MENSAL ACOMULADO";
 - [x] Opção para colocar o nome no perfil;
 - [x] Enviar código no e-mail para alterar a senha;
-- [x] Liberar cadastro de movimentação em datas futuras
-- [x] Cadastrar opção de parcela
-- [ ] Criar abas faturas
+- [x] Liberar cadastro de movimentação em datas futuras;
+- [x] Cadastrar opção de parcela;
+- [ ] Criar abas faturas;
+- [ ] Criar opção de tags, sendo possível cada user cadastrar as suas próprias;
+- [ ] Criar menu insights, aonde vai ser possível filtrar movimentações por tags;
+- [x] Adicionar receita recorrente;
 
 ### Ajustes a serem feitos:
 
-- [ ] Mostrar logs no console para corrigir e averiguar erros
-- [ ] Corrigir sumiço dos placeholders no apk em celulares com tema escuro
+- [ ] Mostrar logs no console para corrigir e averiguar erros;
+- [ ] Corrigir sumiço dos placeholders no apk em celulares com tema escuro;
+- [ ] Padronizar telas de cadastro de movimentação;

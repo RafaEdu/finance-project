@@ -6,60 +6,61 @@
 
 ```sql
 -- 1. Tabela de Categorias de Receita
-create table public.categoria_receita (
-id uuid not null default gen_random_uuid(),
-user_id uuid not null references auth.users(id) on delete cascade,
-nome text not null,
-icone text,
-created_at timestamptz default now(),
-
--- Constraints
-primary key (id),
-unique (user_id, nome)
+CREATE TABLE public.categoria_receita (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  nome text NOT NULL,
+  icone text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT categoria_receita_pkey PRIMARY KEY (id),
+  CONSTRAINT categoria_receita_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 
 -- 2. Tabela de Categorias de Despesa
-create table public.categoria_despesa (
-id uuid not null default gen_random_uuid(),
-user_id uuid not null references auth.users(id) on delete cascade,
-nome text not null,
-icone text,
-created_at timestamptz default now(),
-
-primary key (id),
-unique (user_id, nome)
+CREATE TABLE public.categoria_despesa (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  nome text NOT NULL,
+  icone text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT categoria_despesa_pkey PRIMARY KEY (id),
+  CONSTRAINT categoria_despesa_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 
 -- 3. Tabela de Receitas
-create table public.receita (
-id uuid not null default gen_random_uuid(),
-user_id uuid not null references auth.users(id) on delete cascade,
-categoria_id uuid references public.categoria_receita(id) on delete set null,
-descricao text not null,
-valor numeric(12, 2) not null, -- Até 12 dígitos, com 2 casas decimais
-data_transacao timestamptz not null default now(),
-recebido boolean default false, -- Para controlar se já caiu na conta ou é previsão
-created_at timestamptz default now(),
-
-primary key (id)
+CREATE TABLE public.receita (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  categoria_id uuid,
+  descricao text NOT NULL,
+  valor numeric NOT NULL,
+  data_transacao timestamp with time zone NOT NULL DEFAULT now(),
+  recebido boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  parcela_atual integer DEFAULT 1,
+  parcela_total integer DEFAULT 1,
+  grupo_id uuid DEFAULT gen_random_uuid(),
+  CONSTRAINT receita_pkey PRIMARY KEY (id),
+  CONSTRAINT receita_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT receita_categoria_id_fkey FOREIGN KEY (categoria_id) REFERENCES public.categoria_receita(id)
 );
 
 -- 4. Tabela de Despesas
-create table public.despesa (
-id uuid not null default gen_random_uuid(),
-user_id uuid not null references auth.users(id) on delete cascade,
-categoria_id uuid references public.categoria_despesa(id) on delete set null,
-descricao text not null,
-valor numeric(12, 2) not null,
-data_transacao timestamptz not null default now(),
-pago boolean default false, -- Para controlar se já foi pago
--- Colunas para Parcelamento
-parcela_atual integer default 1,
-parcela_total integer default 1,
-grupo_id uuid default gen_random_uuid(), -- Identificador para agrupar parcelas
-created_at timestamptz default now(),
-
-primary key (id)
+CREATE TABLE public.despesa (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  categoria_id uuid,
+  descricao text NOT NULL,
+  valor numeric NOT NULL,
+  data_transacao timestamp with time zone NOT NULL DEFAULT now(),
+  pago boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  parcela_atual integer DEFAULT 1,
+  parcela_total integer DEFAULT 1,
+  grupo_id uuid DEFAULT gen_random_uuid(),
+  CONSTRAINT despesa_pkey PRIMARY KEY (id),
+  CONSTRAINT despesa_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT despesa_categoria_id_fkey FOREIGN KEY (categoria_id) REFERENCES public.categoria_despesa(id)
 );
 
 -- Índices para performance
