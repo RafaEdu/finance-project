@@ -205,32 +205,30 @@ export const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  // --- NOVOS ESTILOS PARA TÍTULO E BADGE ---
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap", // Garante que se o texto for muito longo, quebre linha sem "estourar" o layout
+    flexWrap: "wrap",
     marginBottom: 4,
   },
   transactionTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#2c3e50",
-    marginRight: 8, // Espaço entre o texto e o badge
+    marginRight: 8,
   },
   installmentBadge: {
-    backgroundColor: "#e74c3c", // Fundo vermelho solicitado
-    borderRadius: 12, // Bordas bem arredondadas (estilo "Pill")
+    backgroundColor: "#e74c3c",
+    borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    alignSelf: "flex-start", // Garante que o badge tenha o tamanho do texto
+    alignSelf: "flex-start",
   },
   installmentText: {
-    color: "#fff", // Texto branco para contraste com o vermelho
+    color: "#fff",
     fontSize: 10,
     fontWeight: "bold",
   },
-  // ----------------------------------------
   transactionDate: {
     fontSize: 12,
     color: "#95a5a6",
