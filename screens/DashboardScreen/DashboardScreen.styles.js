@@ -229,6 +229,18 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
   },
+  recurrenceBadge: {
+    backgroundColor: "#27ae60",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+  },
+  recurrenceText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   transactionDate: {
     fontSize: 12,
     color: "#95a5a6",

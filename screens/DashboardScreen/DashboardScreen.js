@@ -284,6 +284,7 @@ export default function DashboardScreen({ navigation }) {
           },
         },
       ],
+      { cancelable: true },
     );
   };
 
@@ -354,7 +355,11 @@ export default function DashboardScreen({ navigation }) {
 
   const renderTransactionItem = (item) => {
     const isIncome = item.type === "income";
-    const isInstallment = item.parcela_total && item.parcela_total > 1;
+    const hasMultipleOccurrences = item.parcela_total && item.parcela_total > 1;
+
+    // Diferencia: Receitas com múltiplas ocorrências são "recorrências", despesas são "parcelas"
+    const isRecurrence = isIncome && hasMultipleOccurrences;
+    const isInstallment = !isIncome && hasMultipleOccurrences;
 
     return (
       <View key={`${item.type}-${item.id}`} style={styles.transactionCard}>
@@ -369,6 +374,13 @@ export default function DashboardScreen({ navigation }) {
         <View style={styles.transactionInfo}>
           <View style={styles.titleRow}>
             <Text style={styles.transactionTitle}>{item.descricao}</Text>
+            {isRecurrence && (
+              <View style={styles.recurrenceBadge}>
+                <Text style={styles.recurrenceText}>
+                  {item.parcela_atual}º de {item.parcela_total}
+                </Text>
+              </View>
+            )}
             {isInstallment && (
               <View style={styles.installmentBadge}>
                 <Text style={styles.installmentText}>
@@ -396,12 +408,16 @@ export default function DashboardScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => handleEdit(item)}
               style={styles.actionButton}
+              activeOpacity={0.6}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="pencil" size={20} color="#f39c12" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleDelete(item)}
               style={styles.actionButton}
+              activeOpacity={0.6}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="trash" size={20} color="#e74c3c" />
             </TouchableOpacity>
