@@ -247,6 +247,19 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.tagsButton}
+          onPress={() => navigation.navigate("Tags")}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="pricetag" size={20} color="#2980b9" />
+            <Text style={styles.tagsButtonText}>Minhas Tags</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#999" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Segurança</Text>
         <Text style={styles.label}>Alterar Senha</Text>
 

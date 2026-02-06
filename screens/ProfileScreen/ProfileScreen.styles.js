@@ -71,4 +71,16 @@ export const styles = StyleSheet.create({
   logoutContainer: {
     marginTop: "auto", // Empurra para o final se houver espaço
   },
+  tagsButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+  },
+  tagsButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2980b9",
+    marginLeft: 10,
+  },
 });

@@ -63,6 +63,18 @@ CREATE TABLE public.despesa (
   CONSTRAINT despesa_categoria_id_fkey FOREIGN KEY (categoria_id) REFERENCES public.categoria_despesa(id)
 );
 
+-- 5. Tabela de Tags (marcadores de transações)
+CREATE TABLE public.tags (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  nome text NOT NULL,
+  cor text DEFAULT '#2980b9',
+  cor_texto text DEFAULT '#ffffff',
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT tags_pkey PRIMARY KEY (id),
+  CONSTRAINT tags_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+
 -- Índices para performance
 -- Como vai ser filtrado muito por user_id, criei índices para acelera as consultas
 create index idx_receita_user on public.receita(user_id);
@@ -71,6 +83,26 @@ create index idx_receita_data on public.receita(data_transacao);
 create index idx_despesa_data on public.despesa(data_transacao);
 -- Índice útil para buscar todas as parcelas de uma mesma compra
 create index idx_despesa_grupo on public.despesa(grupo_id);
+-- Índice para tags por usuário
+create index idx_tags_user on public.tags(user_id);
+```
+
+### =========================================================
+
+### MIGRAÇÃO: ADICIONAR TAG_ID NAS TABELAS DE RECEITA E DESPESA
+
+### =========================================================
+
+```sql
+-- Adicionar coluna tag_id na tabela de receitas (opcional, sem NOT NULL)
+ALTER TABLE public.receita
+  ADD COLUMN tag_id uuid,
+  ADD CONSTRAINT receita_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE SET NULL;
+
+-- Adicionar coluna tag_id na tabela de despesas (opcional, sem NOT NULL)
+ALTER TABLE public.despesa
+  ADD COLUMN tag_id uuid,
+  ADD CONSTRAINT despesa_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE SET NULL;
 ```
 
 ### =========================================================
@@ -84,6 +116,27 @@ alter table public.categoria_receita enable row level security;
 alter table public.categoria_despesa enable row level security;
 alter table public.receita enable row level security;
 alter table public.despesa enable row level security;
+alter table public.tags enable row level security;
+```
+
+### =========================================================
+
+### POLÍTICAS PARA TAGS
+
+### =========================================================
+
+```sql
+create policy "Usuários podem ver suas próprias tags"
+on public.tags for select using (auth.uid() = user_id);
+
+create policy "Usuários podem criar suas tags"
+on public.tags for insert with check (auth.uid() = user_id);
+
+create policy "Usuários podem editar suas tags"
+on public.tags for update using (auth.uid() = user_id);
+
+create policy "Usuários podem deletar suas tags"
+on public.tags for delete using (auth.uid() = user_id);
 ```
 
 ### =========================================================

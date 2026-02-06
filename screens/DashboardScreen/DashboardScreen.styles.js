@@ -241,6 +241,16 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "bold",
   },
+  tagBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    alignSelf: "flex-start",
+  },
+  tagBadgeText: {
+    fontSize: 10,
+    fontWeight: "bold",
+  },
   transactionDate: {
     fontSize: 12,
     color: "#95a5a6",

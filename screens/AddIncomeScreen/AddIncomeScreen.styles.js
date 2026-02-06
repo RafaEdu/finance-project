@@ -196,4 +196,34 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
   },
+  // --- TAG SELECTOR ---
+  tagSelectorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 5,
+    gap: 8,
+  },
+  tagSelector: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+  },
+  tagSelectorText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  tagSelectorPlaceholder: {
+    fontSize: 14,
+    color: "#999",
+    marginLeft: 6,
+  },
+  tagAddButton: {
+    padding: 4,
+  },
 });

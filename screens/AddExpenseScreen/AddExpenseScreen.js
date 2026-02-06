@@ -51,6 +51,11 @@ export default function AddExpenseScreen({ navigation, route }) {
     useState(false);
   const [installmentsList, setInstallmentsList] = useState([]); // Array de objetos { id, value, date }
 
+  // Tags
+  const [tags, setTags] = useState([]);
+  const [selectedTagId, setSelectedTagId] = useState(null);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+
   // Controles de UI
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showInstallmentPicker, setShowInstallmentPicker] = useState(false); // Modal da "roleta"
@@ -65,14 +70,25 @@ export default function AddExpenseScreen({ navigation, route }) {
   useFocusEffect(
     useCallback(() => {
       resetForm();
+      fetchTags();
       if (transactionToEdit) {
         setMode("single");
         setDescription(transactionToEdit.descricao);
         setSingleValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
+        setSelectedTagId(transactionToEdit.tag_id || null);
       }
     }, [transactionToEdit]),
   );
+
+  const fetchTags = async () => {
+    const { data } = await supabase
+      .from("tags")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("nome", { ascending: true });
+    setTags(data || []);
+  };
 
   const resetForm = () => {
     setMode("single");
@@ -83,6 +99,7 @@ export default function AddExpenseScreen({ navigation, route }) {
     setBaseInstallmentValue("");
     setAreInstallmentsDifferent(false);
     setInstallmentsList([]);
+    setSelectedTagId(null);
     setShowToast(false);
   };
 
@@ -188,6 +205,7 @@ export default function AddExpenseScreen({ navigation, route }) {
             descricao: description,
             valor: parseCurrency(singleValue),
             data_transacao: date.toISOString(),
+            tag_id: selectedTagId,
           })
           .eq("id", transactionToEdit.id);
         error = updateError;
@@ -202,6 +220,7 @@ export default function AddExpenseScreen({ navigation, route }) {
             parcela_atual: 1,
             parcela_total: 1,
             grupo_id: null,
+            tag_id: selectedTagId,
           });
           error = insertError;
         } else {
@@ -215,6 +234,7 @@ export default function AddExpenseScreen({ navigation, route }) {
             parcela_atual: item.id,
             parcela_total: installmentsCount,
             grupo_id: groupId,
+            tag_id: selectedTagId,
           }));
 
           const { error: insertError } = await supabase
@@ -327,6 +347,52 @@ export default function AddExpenseScreen({ navigation, route }) {
             value={description}
             onChangeText={setDescription}
           />
+
+          {/* Seletor de Tag */}
+          <View style={styles.tagSelectorRow}>
+            <TouchableOpacity
+              style={styles.tagSelector}
+              onPress={() => setShowTagPicker(true)}
+            >
+              {selectedTagId ? (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      width: 12,
+                      height: 12,
+                      borderRadius: 6,
+                      backgroundColor:
+                        tags.find((t) => t.id === selectedTagId)?.cor ||
+                        "#2980b9",
+                      marginRight: 8,
+                    }}
+                  />
+                  <Text style={styles.tagSelectorText}>
+                    {tags.find((t) => t.id === selectedTagId)?.nome || "Tag"}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setSelectedTagId(null)}
+                    style={{ marginLeft: 8 }}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#999" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons name="pricetag-outline" size={16} color="#999" />
+                  <Text style={styles.tagSelectorPlaceholder}>
+                    Adicionar tag
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.tagAddButton}
+              onPress={() => navigation.navigate("Tags")}
+            >
+              <Ionicons name="add-circle-outline" size={22} color="#e74c3c" />
+            </TouchableOpacity>
+          </View>
 
           {mode === "single" && (
             <>
@@ -462,6 +528,55 @@ export default function AddExpenseScreen({ navigation, route }) {
               <Button
                 title="Fechar"
                 onPress={() => setShowInstallmentPicker(false)}
+                color="#e74c3c"
+              />
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de Seleção de Tag */}
+        <Modal visible={showTagPicker} transparent={true} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Selecione uma Tag</Text>
+              <FlatList
+                data={tags}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.modalItem}
+                    onPress={() => {
+                      setSelectedTagId(item.id);
+                      setShowTagPicker(false);
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: item.cor || "#2980b9",
+                          marginRight: 10,
+                        }}
+                      />
+                      <Text style={styles.modalItemText}>{item.nome}</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                  <Text
+                    style={{ textAlign: "center", color: "#999", padding: 20 }}
+                  >
+                    Nenhuma tag cadastrada.
+                  </Text>
+                }
+              />
+              <Button
+                title="Fechar"
+                onPress={() => setShowTagPicker(false)}
                 color="#e74c3c"
               />
             </View>

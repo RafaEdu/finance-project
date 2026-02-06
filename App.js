@@ -17,6 +17,7 @@ import DashboardScreen from "./screens/DashboardScreen/DashboardScreen";
 import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen";
 import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen";
 import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
+import TagsScreen from "./screens/TagsScreen/TagsScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -87,6 +88,15 @@ function Navigation() {
               options={{
                 headerShown: true,
                 title: "Meu Perfil",
+                headerBackTitle: "Voltar",
+              }}
+            />
+            <Stack.Screen
+              name="Tags"
+              component={TagsScreen}
+              options={{
+                headerShown: true,
+                title: "Minhas Tags",
                 headerBackTitle: "Voltar",
               }}
             />

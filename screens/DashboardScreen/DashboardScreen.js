@@ -49,6 +49,7 @@ export default function DashboardScreen({ navigation }) {
   const [balance, setBalance] = useState(0);
   const [monthToDateBalance, setMonthToDateBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
+  const [tagsMap, setTagsMap] = useState({});
 
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0];
@@ -126,9 +127,26 @@ export default function DashboardScreen({ navigation }) {
     };
   };
 
+  const fetchUserTags = async () => {
+    const { data } = await supabase
+      .from("tags")
+      .select("*")
+      .eq("user_id", user.id);
+    if (data) {
+      const map = {};
+      data.forEach((tag) => {
+        map[tag.id] = tag;
+      });
+      setTagsMap(map);
+    }
+  };
+
   const fetchDashboardData = async (retryCount = 0) => {
     try {
       const { startISO, endISO } = getDateRange(currentDate, filterType);
+
+      // 0. Busca Tags do usuário
+      await fetchUserTags();
 
       // 1. Busca Receitas
       const { data: incomes, error: incomeError } = await supabase
@@ -386,6 +404,9 @@ export default function DashboardScreen({ navigation }) {
     const isRecurrence = isIncome && hasMultipleOccurrences;
     const isInstallment = !isIncome && hasMultipleOccurrences;
 
+    // Tag associada
+    const tag = item.tag_id ? tagsMap[item.tag_id] : null;
+
     return (
       <View key={`${item.type}-${item.id}`} style={styles.transactionCard}>
         <View style={styles.iconWrapper}>
@@ -410,6 +431,23 @@ export default function DashboardScreen({ navigation }) {
               <View style={styles.installmentBadge}>
                 <Text style={styles.installmentText}>
                   Parcela {item.parcela_atual}/{item.parcela_total}
+                </Text>
+              </View>
+            )}
+            {tag && (
+              <View
+                style={[
+                  styles.tagBadge,
+                  { backgroundColor: tag.cor || "#2980b9" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tagBadgeText,
+                    { color: tag.cor_texto || "#ffffff" },
+                  ]}
+                >
+                  {tag.nome}
                 </Text>
               </View>
             )}
