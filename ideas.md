@@ -14,7 +14,7 @@
 - [ ] Criar opção de tags, sendo possível cada user cadastrar as suas próprias;
 - [ ] Criar menu insights, aonde vai ser possível filtrar movimentações por tags;
 - [x] Adicionar receita recorrente;
-- [ ] Possível pesquisar as movimentações sem diferenciar acentos;
+- [x] Possível pesquisar as movimentações sem diferenciar acentos;
 
 ### Ajustes a serem feitos:
 

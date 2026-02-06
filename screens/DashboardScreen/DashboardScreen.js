@@ -254,29 +254,47 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const handleDelete = (item) => {
+    console.log("handleDelete chamado para:", item.id, item.type);
+
     Alert.alert(
       "Confirmar Exclusão",
       `Deseja excluir esta ${item.type === "income" ? "receita" : "despesa"}?`,
       [
-        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Cancelar",
+          style: "cancel",
+          onPress: () => console.log("Cancelado"),
+        },
         {
           text: "Excluir",
           style: "destructive",
           onPress: async () => {
+            console.log("Confirmado - iniciando exclusão");
             setLoading(true);
             const tableName = item.type === "income" ? "receita" : "despesa";
 
             try {
+              console.log("Deletando da tabela:", tableName, "id:", item.id);
               const { error } = await supabase
                 .from(tableName)
                 .delete()
                 .eq("id", item.id);
+
+              console.log(
+                "Resultado do delete:",
+                error ? error.message : "Sucesso",
+              );
+
               if (error) {
-                Alert.alert("Erro", "Não foi possível excluir.");
+                Alert.alert(
+                  "Erro",
+                  `Não foi possível excluir: ${error.message}`,
+                );
               } else {
                 fetchDashboardData();
               }
             } catch (e) {
+              console.log("Erro catch:", e.message);
               Alert.alert("Erro", "Falha de conexão.");
             } finally {
               setLoading(false);
@@ -336,9 +354,16 @@ export default function DashboardScreen({ navigation }) {
     return new Date(dateString).toLocaleDateString("pt-BR");
   };
 
-  const filteredTransactions = transactions.filter((item) =>
-    (item.descricao || "").toLowerCase().includes(searchText.toLowerCase()),
-  );
+  // Função para remover acentos de uma string
+  const removeAccents = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  };
+
+  const filteredTransactions = transactions.filter((item) => {
+    const descricao = removeAccents((item.descricao || "").toLowerCase());
+    const search = removeAccents(searchText.toLowerCase());
+    return descricao.includes(search);
+  });
 
   if (
     loading &&
@@ -377,14 +402,14 @@ export default function DashboardScreen({ navigation }) {
             {isRecurrence && (
               <View style={styles.recurrenceBadge}>
                 <Text style={styles.recurrenceText}>
-                  {item.parcela_atual}º de {item.parcela_total}
+                  Receita {item.parcela_atual}/{item.parcela_total}
                 </Text>
               </View>
             )}
             {isInstallment && (
               <View style={styles.installmentBadge}>
                 <Text style={styles.installmentText}>
-                  {item.parcela_atual}ª Parcela
+                  Parcela {item.parcela_atual}/{item.parcela_total}
                 </Text>
               </View>
             )}
