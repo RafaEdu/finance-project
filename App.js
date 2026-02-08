@@ -18,6 +18,7 @@ import AddExpenseScreen from "./screens/AddExpenseScreen/AddExpenseScreen";
 import AddIncomeScreen from "./screens/AddIncomeScreen/AddIncomeScreen";
 import ProfileScreen from "./screens/ProfileScreen/ProfileScreen";
 import TagsScreen from "./screens/TagsScreen/TagsScreen";
+import InsightsScreen from "./screens/InsightsScreen/InsightsScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,24 +33,21 @@ function AppTabs() {
         tabBarInactiveTintColor: "gray",
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === "Nova Despesa") {
-            iconName = focused
-              ? "arrow-down-circle"
-              : "arrow-down-circle-outline";
-          } else if (route.name === "Dashboard") {
+          if (route.name === "Dashboard") {
             iconName = focused ? "search" : "search-outline";
           } else if (route.name === "Nova Receita") {
             iconName = focused ? "arrow-up-circle" : "arrow-up-circle-outline";
+          } else if (route.name === "Nova Despesa") {
+            iconName = focused
+              ? "arrow-down-circle"
+              : "arrow-down-circle-outline";
+          } else if (route.name === "Insights") {
+            iconName = focused ? "analytics" : "analytics-outline";
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="Nova Despesa"
-        component={AddExpenseScreen}
-        options={{ title: "Cadastrar Despesa" }}
-      />
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
@@ -59,6 +57,16 @@ function AppTabs() {
         name="Nova Receita"
         component={AddIncomeScreen}
         options={{ title: "Cadastrar Receita" }}
+      />
+      <Tab.Screen
+        name="Nova Despesa"
+        component={AddExpenseScreen}
+        options={{ title: "Cadastrar Despesa" }}
+      />
+      <Tab.Screen
+        name="Insights"
+        component={InsightsScreen}
+        options={{ title: "Insights" }}
       />
     </Tab.Navigator>
   );
