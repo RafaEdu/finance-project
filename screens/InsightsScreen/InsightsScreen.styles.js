@@ -15,6 +15,12 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 16,
+  },
 
   // Tag Picker
   tagPickerContainer: {

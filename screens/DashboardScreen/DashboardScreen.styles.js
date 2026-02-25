@@ -20,6 +20,12 @@ export const styles = StyleSheet.create({
     color: "#2c3e50",
     marginBottom: 20,
   },
+  screenTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 4,
+  },
   profileIcon: {
     marginRight: 15,
   },

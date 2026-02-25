@@ -1,5 +1,13 @@
 import React from "react";
-import { StatusBar, StyleSheet, View, ActivityIndicator } from "react-native";
+import {
+  StatusBar,
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  Image,
+} from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -23,12 +31,40 @@ import InsightsScreen from "./screens/InsightsScreen/InsightsScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+function ProfileHeaderButton({ navigation }) {
+  const { user } = useAuth();
+  const avatarUrl = user?.user_metadata?.avatar_url;
+
+  return (
+    <TouchableOpacity
+      style={appStyles.profileButton}
+      onPress={() => navigation.navigate("Profile")}
+    >
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={appStyles.profileImage}
+        />
+      ) : (
+        <Ionicons name="person-circle-outline" size={38} color="#0000ff" />
+      )}
+    </TouchableOpacity>
+  );
+}
+
 function AppTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Dashboard"
-      screenOptions={({ route }) => ({
+      screenOptions={({ route, navigation }) => ({
         headerShown: true,
+        headerTitleAlign: "left",
+        headerTitle: () => (
+          <Text style={appStyles.appTitle}>Finance</Text>
+        ),
+        headerRight: () => (
+          <ProfileHeaderButton navigation={navigation} />
+        ),
         tabBarActiveTintColor: "#0000ff",
         tabBarInactiveTintColor: "gray",
         tabBarIcon: ({ focused, color, size }) => {
@@ -102,11 +138,17 @@ function Navigation() {
             <Stack.Screen
               name="Tags"
               component={TagsScreen}
-              options={{
+              options={({ navigation }) => ({
                 headerShown: true,
-                title: "Minhas Tags",
+                headerTitleAlign: "left",
+                headerTitle: () => (
+                  <Text style={appStyles.appTitle}>Finance</Text>
+                ),
+                headerRight: () => (
+                  <ProfileHeaderButton navigation={navigation} />
+                ),
                 headerBackTitle: "Voltar",
-              }}
+              })}
             />
             {/* Nome DIFERENTE para quando estiver logado (Update) */}
             <Stack.Screen
@@ -154,5 +196,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#fff",
+  },
+});
+
+const appStyles = StyleSheet.create({
+  appTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#0000ff",
+  },
+  profileButton: {
+    marginRight: 15,
+    overflow: "hidden",
+    borderRadius: 19,
+  },
+  profileImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
 });

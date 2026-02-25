@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  useLayoutEffect,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,8 +9,7 @@ import {
   Platform,
   Alert,
   TextInput,
-  Image,
-  KeyboardAvoidingView, // Importante
+  KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,29 +47,6 @@ export default function DashboardScreen({ navigation }) {
 
   const displayName =
     user?.user_metadata?.full_name || user?.email?.split("@")[0];
-
-  // Configuração do Header com a Foto de Perfil
-  useLayoutEffect(() => {
-    const avatarUrl = user?.user_metadata?.avatar_url;
-
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          style={[styles.profileIcon, { overflow: "hidden", borderRadius: 15 }]}
-          onPress={() => navigation.navigate("Profile")}
-        >
-          {avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={{ width: 30, height: 30, borderRadius: 15 }}
-            />
-          ) : (
-            <Ionicons name="person-circle-outline" size={30} color="#0000ff" />
-          )}
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, user]);
 
   useEffect(() => {
     const loadBalanceSettings = async () => {
