@@ -286,6 +286,7 @@ export default function TagsScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Nome da tag"
+          placeholderTextColor="#999"
           value={newTagName}
           onChangeText={setNewTagName}
           maxLength={30}
@@ -308,6 +309,7 @@ export default function TagsScreen({ navigation }) {
           <TextInput
             style={styles.hexInput}
             placeholder="#2980b9"
+            placeholderTextColor="#999"
             value={newTagHexInput}
             onChangeText={handleNewHexChange}
             maxLength={7}
@@ -375,6 +377,7 @@ export default function TagsScreen({ navigation }) {
               style={styles.input}
               value={editName}
               onChangeText={setEditName}
+              placeholderTextColor="#999"
               maxLength={30}
             />
 
@@ -395,6 +398,7 @@ export default function TagsScreen({ navigation }) {
               <TextInput
                 style={styles.hexInput}
                 placeholder="#2980b9"
+                placeholderTextColor="#999"
                 value={editHexInput}
                 onChangeText={handleEditHexChange}
                 maxLength={7}

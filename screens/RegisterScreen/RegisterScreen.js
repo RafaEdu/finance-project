@@ -46,6 +46,7 @@ export default function RegisterScreen({ navigation }) {
         onChangeText={setEmail}
         value={email}
         placeholder="email@endereco.com"
+        placeholderTextColor="#999"
         autoCapitalize="none"
       />
       <TextInput
@@ -54,6 +55,7 @@ export default function RegisterScreen({ navigation }) {
         value={password}
         secureTextEntry={true}
         placeholder="Senha"
+        placeholderTextColor="#999"
       />
 
       <View style={styles.buttonContainer}>

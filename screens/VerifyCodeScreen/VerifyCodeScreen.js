@@ -69,6 +69,7 @@ export default function VerifyCodeScreen({ route, navigation }) {
         value={code}
         onChangeText={setCode}
         placeholder="123456"
+        placeholderTextColor="#999"
         keyboardType="number-pad"
         maxLength={6}
         autoFocus

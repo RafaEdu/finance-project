@@ -624,6 +624,7 @@ export default function DashboardScreen({ navigation }) {
             <TextInput
               style={styles.searchInput}
               placeholder="Pesquisar movimentação..."
+              placeholderTextColor="#999"
               value={searchText}
               onChangeText={setSearchText}
               autoCapitalize="none"

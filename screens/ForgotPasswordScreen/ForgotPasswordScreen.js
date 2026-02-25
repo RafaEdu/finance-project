@@ -55,6 +55,7 @@ export default function ForgotPasswordScreen({ navigation }) {
           onChangeText={setEmail}
           value={email}
           placeholder="email@endereco.com"
+          placeholderTextColor="#999"
           autoCapitalize="none"
           keyboardType="email-address"
         />

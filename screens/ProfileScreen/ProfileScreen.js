@@ -232,6 +232,7 @@ export default function ProfileScreen({ navigation }) {
             value={name}
             onChangeText={setName}
             placeholder="Seu nome"
+            placeholderTextColor="#999"
             autoCapitalize="words"
           />
           <TouchableOpacity style={styles.eyeIcon}>
@@ -269,6 +270,7 @@ export default function ProfileScreen({ navigation }) {
             value={newPassword}
             onChangeText={setNewPassword}
             placeholder="Nova senha"
+            placeholderTextColor="#999"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
           />

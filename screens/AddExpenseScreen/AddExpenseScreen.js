@@ -279,6 +279,7 @@ export default function AddExpenseScreen({ navigation, route }) {
           }
           keyboardType="numeric"
           placeholder="0,00"
+          placeholderTextColor="#999"
         />
       ) : (
         <Text style={styles.installmentValueFixed}>R$ {item.displayValue}</Text>
@@ -344,6 +345,7 @@ export default function AddExpenseScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             placeholder="Ex: Mercado, Aluguel..."
+            placeholderTextColor="#999"
             value={description}
             onChangeText={setDescription}
           />
@@ -400,6 +402,7 @@ export default function AddExpenseScreen({ navigation, route }) {
               <TextInput
                 style={styles.input}
                 placeholder="0,00"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={singleValue}
                 onChangeText={handleSingleValueChange}
@@ -442,6 +445,7 @@ export default function AddExpenseScreen({ navigation, route }) {
               <TextInput
                 style={styles.input}
                 placeholder="0,00"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={baseInstallmentValue}
                 onChangeText={handleBaseInstallmentValueChange}

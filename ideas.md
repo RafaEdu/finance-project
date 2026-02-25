@@ -12,7 +12,7 @@
 - [x] Cadastrar opção de parcela;
 - [ ] Criar abas faturas;
 - [x] Criar opção de tags, sendo possível cada usuário cadastrar suas próprias tags;
-- [ ] Criar menu insights, aonde vai ser possível filtrar movimentações por tags;
+- [x] Criar menu insights, aonde vai ser possível filtrar movimentações por tags;
 - [x] Adicionar receita recorrente;
 - [x] Possível pesquisar as movimentações sem diferenciar acentos;
 
@@ -20,7 +20,7 @@
 
 - [ ] Mostrar logs no console para corrigir e averiguar erros;
 - [ ] Corrigir sumiço dos placeholders no apk em celulares com tema escuro;
-- [ ] Padronizar telas de cadastro de movimentação;
+- [x] Padronizar telas de cadastro de movimentação;
 
 ### Ideias futuras:
 

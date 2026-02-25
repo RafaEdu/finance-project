@@ -283,6 +283,7 @@ export default function AddIncomeScreen({ navigation, route }) {
           onChangeText={(text) => handleIndividualValueChange(text, index)}
           keyboardType="numeric"
           placeholder="0,00"
+          placeholderTextColor="#999"
         />
       ) : (
         <Text style={styles.installmentValueFixed}>R$ {item.displayValue}</Text>
@@ -347,6 +348,7 @@ export default function AddIncomeScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             placeholder="Ex: Salário, Projeto X..."
+            placeholderTextColor="#999"
             value={description}
             onChangeText={setDescription}
           />
@@ -404,6 +406,7 @@ export default function AddIncomeScreen({ navigation, route }) {
               <TextInput
                 style={styles.input}
                 placeholder="0,00"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={singleValue}
                 onChangeText={handleSingleValueChange}
@@ -447,6 +450,7 @@ export default function AddIncomeScreen({ navigation, route }) {
               <TextInput
                 style={styles.input}
                 placeholder="0,00"
+                placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={baseRecurrenceValue}
                 onChangeText={handleBaseRecurrenceValueChange}
