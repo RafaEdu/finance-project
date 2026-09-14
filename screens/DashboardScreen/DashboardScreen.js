@@ -349,9 +349,10 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const filteredTransactions = transactions.filter((item) => {
-    const descricao = removeAccents((item.descricao || "").toLowerCase());
     const search = removeAccents(searchText.toLowerCase());
-    return descricao.includes(search);
+    const nome = removeAccents((item.nome || "").toLowerCase());
+    const descricao = removeAccents((item.descricao || "").toLowerCase());
+    return nome.includes(search) || descricao.includes(search);
   });
 
   if (
@@ -390,7 +391,9 @@ export default function DashboardScreen({ navigation }) {
 
         <View style={styles.transactionInfo}>
           <View style={styles.titleRow}>
-            <Text style={styles.transactionTitle}>{item.descricao}</Text>
+            <Text style={styles.transactionTitle}>
+              {item.nome || "Sem nome"}
+            </Text>
             {isRecurrence && (
               <View style={styles.recurrenceBadge}>
                 <Text style={styles.recurrenceText}>
@@ -426,6 +429,11 @@ export default function DashboardScreen({ navigation }) {
           <Text style={styles.transactionDate}>
             {formatTransactionDate(item.data_transacao)}
           </Text>
+          {!!item.descricao && (
+            <Text style={styles.transactionDescription}>
+              {item.descricao}
+            </Text>
+          )}
         </View>
 
         <View style={{ alignItems: "flex-end" }}>

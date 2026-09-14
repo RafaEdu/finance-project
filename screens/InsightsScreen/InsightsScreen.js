@@ -300,7 +300,9 @@ export default function InsightsScreen({ navigation }) {
 
         <View style={styles.transactionInfo}>
           <View style={styles.titleRow}>
-            <Text style={styles.transactionTitle}>{item.descricao}</Text>
+            <Text style={styles.transactionTitle}>
+              {item.nome || "Sem nome"}
+            </Text>
             {isRecurrence && (
               <View style={styles.recurrenceBadge}>
                 <Text style={styles.recurrenceText}>
@@ -336,6 +338,11 @@ export default function InsightsScreen({ navigation }) {
           <Text style={styles.transactionDate}>
             {formatTransactionDate(item.data_transacao)}
           </Text>
+          {!!item.descricao && (
+            <Text style={styles.transactionDescription}>
+              {item.descricao}
+            </Text>
+          )}
         </View>
 
         <Text

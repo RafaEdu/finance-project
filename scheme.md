@@ -32,7 +32,8 @@ CREATE TABLE public.receita (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   categoria_id uuid,
-  descricao text NOT NULL,
+  nome text NOT NULL,
+  descricao text,
   valor numeric NOT NULL,
   data_transacao timestamp with time zone NOT NULL DEFAULT now(),
   recebido boolean DEFAULT false,
@@ -50,7 +51,8 @@ CREATE TABLE public.despesa (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   categoria_id uuid,
-  descricao text NOT NULL,
+  nome text NOT NULL,
+  descricao text,
   valor numeric NOT NULL,
   data_transacao timestamp with time zone NOT NULL DEFAULT now(),
   pago boolean DEFAULT false,
@@ -103,6 +105,53 @@ ALTER TABLE public.receita
 ALTER TABLE public.despesa
   ADD COLUMN tag_id uuid,
   ADD CONSTRAINT despesa_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES public.tags(id) ON DELETE SET NULL;
+```
+
+### =========================================================
+
+### MIGRAÇÃO: TORNAR A DESCRIÇÃO OPCIONAL
+
+### =========================================================
+
+```sql
+-- Remover o NOT NULL da coluna descricao (vazio passa a ser salvo como null)
+ALTER TABLE public.receita
+  ALTER COLUMN descricao DROP NOT NULL;
+
+ALTER TABLE public.despesa
+  ALTER COLUMN descricao DROP NOT NULL;
+```
+
+### =========================================================
+
+### MIGRAÇÃO: ADICIONAR O CAMPO NOME (OBRIGATÓRIO)
+
+### =========================================================
+
+```sql
+-- 1. Criar a coluna nome inicialmente como nullable
+ALTER TABLE public.receita
+  ADD COLUMN nome text;
+
+ALTER TABLE public.despesa
+  ADD COLUMN nome text;
+
+-- 2. Copiar o valor atual de descricao para nome (preserva os registros existentes).
+--    COALESCE/NULLIF tratam descricao nula, vazia ou apenas com espaços.
+UPDATE public.receita
+  SET nome = COALESCE(NULLIF(BTRIM(descricao), ''), 'Sem nome');
+
+UPDATE public.despesa
+  SET nome = COALESCE(NULLIF(BTRIM(descricao), ''), 'Sem nome');
+
+-- 3. Tornar nome obrigatório
+ALTER TABLE public.receita
+  ALTER COLUMN nome SET NOT NULL;
+
+ALTER TABLE public.despesa
+  ALTER COLUMN nome SET NOT NULL;
+
+-- 4. descricao permanece nullable (opcional)
 ```
 
 ### =========================================================

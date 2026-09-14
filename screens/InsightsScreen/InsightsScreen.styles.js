@@ -301,6 +301,11 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: "#95a5a6",
   },
+  transactionDescription: {
+    fontSize: 12,
+    color: "#7f8c8d",
+    marginTop: 2,
+  },
   transactionValue: {
     fontSize: 16,
     fontWeight: "bold",

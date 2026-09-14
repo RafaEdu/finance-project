@@ -31,6 +31,12 @@ function generateUUID() {
   });
 }
 
+// Normaliza a descrição: vazio ou apenas espaços vira null
+function normalizeDescription(description) {
+  const trimmed = (description || "").trim();
+  return trimmed === "" ? null : trimmed;
+}
+
 export default function AddIncomeScreen({ navigation, route }) {
   const { user } = useAuth();
 
@@ -38,6 +44,7 @@ export default function AddIncomeScreen({ navigation, route }) {
   const [mode, setMode] = useState("single");
 
   // Campos Comuns
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(new Date());
 
@@ -73,7 +80,8 @@ export default function AddIncomeScreen({ navigation, route }) {
       if (transactionToEdit) {
         // Edição de item existente (trata como único por segurança na edição individual)
         setMode("single");
-        setDescription(transactionToEdit.descricao);
+        setName(transactionToEdit.nome || "");
+        setDescription(transactionToEdit.descricao || "");
         setSingleValue(transactionToEdit.valor.toFixed(2).replace(".", ","));
         setDate(new Date(transactionToEdit.data_transacao));
         setSelectedTagId(transactionToEdit.tag_id || null);
@@ -92,6 +100,7 @@ export default function AddIncomeScreen({ navigation, route }) {
 
   const resetForm = () => {
     setMode("single");
+    setName("");
     setDescription("");
     setDate(new Date());
     setSingleValue("");
@@ -176,8 +185,8 @@ export default function AddIncomeScreen({ navigation, route }) {
   // --- SALVAR ---
 
   const handleSave = async () => {
-    if (!description) {
-      Alert.alert("Erro", "Preencha a descrição.");
+    if (!name.trim()) {
+      Alert.alert("Erro", "Preencha o nome.");
       return;
     }
 
@@ -205,7 +214,8 @@ export default function AddIncomeScreen({ navigation, route }) {
         const { error: updateError } = await supabase
           .from("receita")
           .update({
-            descricao: description,
+            nome: name.trim(),
+            descricao: normalizeDescription(description),
             valor: parseCurrency(singleValue),
             data_transacao: date.toISOString(),
             tag_id: selectedTagId,
@@ -217,7 +227,8 @@ export default function AddIncomeScreen({ navigation, route }) {
         if (mode === "single") {
           const { error: insertError } = await supabase.from("receita").insert({
             user_id: user.id,
-            descricao: description,
+            nome: name.trim(),
+            descricao: normalizeDescription(description),
             valor: parseCurrency(singleValue),
             data_transacao: date.toISOString(),
             recebido: false,
@@ -232,7 +243,8 @@ export default function AddIncomeScreen({ navigation, route }) {
           const groupId = generateUUID();
           const rowsToInsert = recurrenceList.map((item) => ({
             user_id: user.id,
-            descricao: description,
+            nome: name.trim(),
+            descricao: normalizeDescription(description),
             valor: item.value,
             data_transacao: item.date.toISOString(),
             recebido: false,
@@ -344,10 +356,19 @@ export default function AddIncomeScreen({ navigation, route }) {
         </Text>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-          <Text style={styles.label}>Descrição</Text>
+          <Text style={styles.label}>Nome</Text>
           <TextInput
             style={styles.input}
             placeholder="Ex: Salário, Projeto X..."
+            placeholderTextColor="#999"
+            value={name}
+            onChangeText={setName}
+          />
+
+          <Text style={styles.label}>Descrição (opcional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Detalhes adicionais..."
             placeholderTextColor="#999"
             value={description}
             onChangeText={setDescription}
