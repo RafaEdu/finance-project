@@ -1,25 +1,29 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../../constants/colors";
 
 export const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: colors.background,
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#2980b9",
+    color: colors.accent,
     textAlign: "center",
   },
   // --- FORMULÁRIO DE CRIAÇÃO ---
   formContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     padding: 15,
     borderRadius: 10,
     marginBottom: 20,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -27,22 +31,22 @@ export const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: "#333",
+    color: colors.text,
     marginBottom: 5,
     fontWeight: "500",
   },
   input: {
-    backgroundColor: "#fafafa",
+    backgroundColor: colors.surfaceMuted,
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     fontSize: 16,
     marginBottom: 10,
   },
   colorLabel: {
     fontSize: 14,
-    color: "#666",
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   colorRow: {
@@ -60,7 +64,7 @@ export const styles = StyleSheet.create({
   },
   colorOptionSelected: {
     borderWidth: 3,
-    borderColor: "#333",
+    borderColor: colors.text,
   },
   // --- HEX INPUT ---
   hexInputRow: {
@@ -74,17 +78,23 @@ export const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
   },
   hexInput: {
     flex: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: colors.surfaceMuted,
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     fontSize: 15,
     fontFamily: "monospace",
+  },
+  errorText: {
+    color: colors.expense,
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
   },
   // --- PREVIEW (simula card do Dashboard) ---
   previewContainer: {
@@ -92,20 +102,20 @@ export const styles = StyleSheet.create({
   },
   previewLabel: {
     fontSize: 12,
-    color: "#999",
+    color: colors.placeholder,
     marginBottom: 6,
     textTransform: "uppercase",
   },
   previewCard: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.borderLight,
     elevation: 1,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
@@ -125,7 +135,7 @@ export const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: colors.textStrong,
   },
   previewTagBadge: {
     borderRadius: 10,
@@ -138,7 +148,7 @@ export const styles = StyleSheet.create({
   },
   previewDate: {
     fontSize: 11,
-    color: "#95a5a6",
+    color: colors.textSubtle,
   },
   previewValue: {
     fontSize: 14,
@@ -148,17 +158,17 @@ export const styles = StyleSheet.create({
   listTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#555",
+    color: colors.textMedium,
     marginBottom: 10,
   },
   tagItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     padding: 14,
     borderRadius: 10,
     marginBottom: 10,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 1,
@@ -172,13 +182,17 @@ export const styles = StyleSheet.create({
     marginRight: 10,
     alignSelf: "flex-start",
   },
+  tagBadgeText: {
+    fontSize: 13,
+    fontWeight: "bold",
+  },
   tagActions: {
     flexDirection: "row",
     gap: 12,
   },
   emptyText: {
     textAlign: "center",
-    color: "#999",
+    color: colors.placeholder,
     fontSize: 14,
     marginTop: 30,
   },
@@ -192,7 +206,7 @@ export const styles = StyleSheet.create({
   modalContent: {
     width: "90%",
     maxHeight: "85%",
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 10,
     padding: 20,
   },
@@ -201,7 +215,7 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
     textAlign: "center",
-    color: "#333",
+    color: colors.text,
   },
   modalButtons: {
     flexDirection: "row",
@@ -216,17 +230,17 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalButtonCancel: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colors.segmentBackground,
   },
   modalButtonSave: {
-    backgroundColor: "#2980b9",
+    backgroundColor: colors.accent,
   },
   modalButtonText: {
     fontWeight: "bold",
-    color: "#333",
+    color: colors.text,
   },
   modalButtonTextSave: {
     fontWeight: "bold",
-    color: "#fff",
+    color: colors.white,
   },
 });

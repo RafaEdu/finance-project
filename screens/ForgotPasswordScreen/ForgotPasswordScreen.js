@@ -1,46 +1,48 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
-  TextInput,
-  Button,
   Alert,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { supabase } from "../../lib/supabase";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { sendPasswordReset } from "../../services/authService";
 import { styles } from "./ForgotPasswordScreen.styles";
+import { ROUTES } from "../../constants/routes";
+import { forgotPasswordSchema } from "../../utils/validators";
+import ControlledFormField from "../../components/ControlledFormField";
+import AppButton from "../../components/AppButton";
 
 export default function ForgotPasswordScreen({ navigation }) {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: "" },
+  });
 
-  async function sendResetEmail() {
-    if (!email) {
-      Alert.alert("Erro", "Por favor, digite seu e-mail.");
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const onSubmit = async ({ email }) => {
+    const { error } = await sendPasswordReset(email);
 
     if (error) {
       Alert.alert("Erro", error.message);
-    } else {
-      Alert.alert(
-        "Sucesso",
-        "Código de recuperação enviado! Verifique seu e-mail."
-      );
-      // Mudança aqui: VerifyAccount
-      navigation.navigate("VerifyAccount", {
-        email: email,
-        type: "recovery",
-      });
+      return;
     }
 
-    setLoading(false);
-  }
+    Alert.alert(
+      "Sucesso",
+      "Código de recuperação enviado! Verifique seu e-mail.",
+    );
+    navigation.navigate(ROUTES.verifyAccount, {
+      email,
+      type: "recovery",
+    });
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -50,21 +52,20 @@ export default function ForgotPasswordScreen({ navigation }) {
           Digite seu email para receber o código de 6 dígitos.
         </Text>
 
-        <TextInput
-          style={styles.input}
-          onChangeText={setEmail}
-          value={email}
+        <ControlledFormField
+          control={control}
+          name="email"
+          inputStyle={styles.input}
           placeholder="email@endereco.com"
-          placeholderTextColor="#999"
           autoCapitalize="none"
           keyboardType="email-address"
         />
 
         <View style={styles.buttonContainer}>
-          <Button
-            title={loading ? "Enviando..." : "Enviar Código"}
-            disabled={loading}
-            onPress={sendResetEmail}
+          <AppButton
+            title={isSubmitting ? "Enviando..." : "Enviar Código"}
+            disabled={isSubmitting}
+            onPress={handleSubmit(onSubmit)}
           />
         </View>
 

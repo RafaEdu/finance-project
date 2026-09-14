@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { supabase } from "../lib/supabase";
+import { getSession, onAuthStateChange } from "../services/authService";
 
 const AuthContext = createContext({});
 
@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Verificar sessão atual ao iniciar
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     // Escutar mudanças de estado (login, logout, etc)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = onAuthStateChange((_event, session) => {
       setSession(session);
       setLoading(false);
     });

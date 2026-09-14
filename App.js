@@ -2,8 +2,6 @@ import React from "react";
 import {
   StatusBar,
   StyleSheet,
-  View,
-  ActivityIndicator,
   Text,
   TouchableOpacity,
   Image,
@@ -15,6 +13,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ROUTES } from "./constants/routes";
+import { colors } from "./constants/colors";
+import LoadingView from "./components/LoadingView";
 
 import LoginScreen from "./screens/LoginScreen/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen/RegisterScreen";
@@ -38,15 +39,16 @@ function ProfileHeaderButton({ navigation }) {
   return (
     <TouchableOpacity
       style={appStyles.profileButton}
-      onPress={() => navigation.navigate("Profile")}
+      onPress={() => navigation.navigate(ROUTES.profile)}
     >
       {avatarUrl ? (
-        <Image
-          source={{ uri: avatarUrl }}
-          style={appStyles.profileImage}
-        />
+        <Image source={{ uri: avatarUrl }} style={appStyles.profileImage} />
       ) : (
-        <Ionicons name="person-circle-outline" size={38} color="#0000ff" />
+        <Ionicons
+          name="person-circle-outline"
+          size={38}
+          color={colors.primary}
+        />
       )}
     </TouchableOpacity>
   );
@@ -55,29 +57,25 @@ function ProfileHeaderButton({ navigation }) {
 function AppTabs() {
   return (
     <Tab.Navigator
-      initialRouteName="Dashboard"
+      initialRouteName={ROUTES.dashboard}
       screenOptions={({ route, navigation }) => ({
         headerShown: true,
         headerTitleAlign: "left",
-        headerTitle: () => (
-          <Text style={appStyles.appTitle}>Finance</Text>
-        ),
-        headerRight: () => (
-          <ProfileHeaderButton navigation={navigation} />
-        ),
-        tabBarActiveTintColor: "#0000ff",
+        headerTitle: () => <Text style={appStyles.appTitle}>Finance</Text>,
+        headerRight: () => <ProfileHeaderButton navigation={navigation} />,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: "gray",
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === "Dashboard") {
+          if (route.name === ROUTES.dashboard) {
             iconName = focused ? "search" : "search-outline";
-          } else if (route.name === "Nova Receita") {
+          } else if (route.name === ROUTES.newIncome) {
             iconName = focused ? "arrow-up-circle" : "arrow-up-circle-outline";
-          } else if (route.name === "Nova Despesa") {
+          } else if (route.name === ROUTES.newExpense) {
             iconName = focused
               ? "arrow-down-circle"
               : "arrow-down-circle-outline";
-          } else if (route.name === "Insights") {
+          } else if (route.name === ROUTES.insights) {
             iconName = focused ? "analytics" : "analytics-outline";
           }
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -85,22 +83,22 @@ function AppTabs() {
       })}
     >
       <Tab.Screen
-        name="Dashboard"
+        name={ROUTES.dashboard}
         component={DashboardScreen}
         options={{ title: "Visão Geral" }}
       />
       <Tab.Screen
-        name="Nova Receita"
+        name={ROUTES.newIncome}
         component={AddIncomeScreen}
         options={{ title: "Cadastrar Receita" }}
       />
       <Tab.Screen
-        name="Nova Despesa"
+        name={ROUTES.newExpense}
         component={AddExpenseScreen}
         options={{ title: "Cadastrar Despesa" }}
       />
       <Tab.Screen
-        name="Insights"
+        name={ROUTES.insights}
         component={InsightsScreen}
         options={{ title: "Insights" }}
       />
@@ -112,11 +110,7 @@ function Navigation() {
   const { session, loading } = useAuth();
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
+    return <LoadingView fullScreen />;
   }
 
   return (
@@ -125,9 +119,9 @@ function Navigation() {
         {session && session.user ? (
           // --- Pilha de Autenticado ---
           <Stack.Group>
-            <Stack.Screen name="MainTabs" component={AppTabs} />
+            <Stack.Screen name={ROUTES.mainTabs} component={AppTabs} />
             <Stack.Screen
-              name="Profile"
+              name={ROUTES.profile}
               component={ProfileScreen}
               options={{
                 headerShown: true,
@@ -136,7 +130,7 @@ function Navigation() {
               }}
             />
             <Stack.Screen
-              name="Tags"
+              name={ROUTES.tags}
               component={TagsScreen}
               options={({ navigation }) => ({
                 headerShown: true,
@@ -152,7 +146,7 @@ function Navigation() {
             />
             {/* Nome DIFERENTE para quando estiver logado (Update) */}
             <Stack.Screen
-              name="VerifyUpdate"
+              name={ROUTES.verifyUpdate}
               component={VerifyCodeScreen}
               options={{ headerShown: true, title: "Confirmar Alteração" }}
             />
@@ -160,15 +154,15 @@ function Navigation() {
         ) : (
           // --- Pilha de Não Autenticado ---
           <Stack.Group>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name={ROUTES.login} component={LoginScreen} />
+            <Stack.Screen name={ROUTES.register} component={RegisterScreen} />
             <Stack.Screen
-              name="ForgotPassword"
+              name={ROUTES.forgotPassword}
               component={ForgotPasswordScreen}
             />
             {/* Nome DIFERENTE para quando estiver deslogado (Cadastro/Recuperação) */}
             <Stack.Screen
-              name="VerifyAccount"
+              name={ROUTES.verifyAccount}
               component={VerifyCodeScreen}
               options={{ headerShown: true, title: "Verificar Conta" }}
             />
@@ -182,7 +176,7 @@ function Navigation() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.white} />
       <AuthProvider>
         <Navigation />
       </AuthProvider>
@@ -190,20 +184,11 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-});
-
 const appStyles = StyleSheet.create({
   appTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#0000ff",
+    color: colors.primary,
   },
   profileButton: {
     marginRight: 15,

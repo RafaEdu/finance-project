@@ -1,42 +1,48 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Button, Alert } from "react-native";
-import { supabase } from "../../lib/supabase";
+import React from "react";
+import { View, Text, Alert } from "react-native";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { verifyOtp, updateUser } from "../../services/authService";
 import { styles } from "./VerifyCodeScreen.styles";
+import { ROUTES } from "../../constants/routes";
+import { verifyCodeSchema } from "../../utils/validators";
+import ControlledFormField from "../../components/ControlledFormField";
+import AppButton from "../../components/AppButton";
 
 export default function VerifyCodeScreen({ route, navigation }) {
-  const { email, type, newPassword } = route.params;
-  const [code, setCode] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { email, type, newPassword } = route.params || {};
 
-  const handleVerify = async () => {
-    if (code.length < 6) {
-      Alert.alert("Erro", "O código deve ter 6 dígitos.");
-      return;
-    }
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm({
+    resolver: zodResolver(verifyCodeSchema),
+    defaultValues: { code: "" },
+  });
 
-    setLoading(true);
-
+  const onSubmit = async ({ code }) => {
     try {
       // 1. Verificar o código OTP
       // Se type="signup", o sucesso aqui cria a sessão, e o App.js automaticamente
       // troca para a pilha Autenticada (MainTabs), saindo desta tela.
-      const { error } = await supabase.auth.verifyOtp({
+      const { error } = await verifyOtp({
         email,
         token: code,
-        type: type,
+        type,
       });
 
       if (error) throw error;
 
       // 2. Se for fluxo de 'recovery' com nova senha (vindo do Perfil logado)
       if (type === "recovery" && newPassword) {
-        const { error: updateError } = await supabase.auth.updateUser({
+        const { error: updateError } = await updateUser({
           password: newPassword,
         });
         if (updateError) throw updateError;
 
         Alert.alert("Sucesso", "Senha atualizada com sucesso!");
-        navigation.navigate("MainTabs"); // Volta para o Dashboard manualmente pois já estávamos logados
+        navigation.navigate(ROUTES.mainTabs);
       }
       // 3. Se for 'signup', o App.js cuidará do redirecionamento automático
       else if (type === "signup") {
@@ -44,16 +50,13 @@ export default function VerifyCodeScreen({ route, navigation }) {
       }
       // 4. Se for 'recovery' do ForgotPassword (sem senha ainda)
       else if (type === "recovery" && !newPassword) {
-        // O usuário foi logado pelo token. O App.js vai jogar para o Dashboard.
         Alert.alert(
           "Sucesso",
-          "Você foi logado! Vá ao seu perfil para redefinir sua senha."
+          "Você foi logado! Vá ao seu perfil para redefinir sua senha.",
         );
       }
     } catch (error) {
       Alert.alert("Erro na verificação", error.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -64,22 +67,21 @@ export default function VerifyCodeScreen({ route, navigation }) {
         Digite o código de 6 dígitos enviado para: {email}
       </Text>
 
-      <TextInput
-        style={styles.input}
-        value={code}
-        onChangeText={setCode}
+      <ControlledFormField
+        control={control}
+        name="code"
+        inputStyle={styles.input}
         placeholder="123456"
-        placeholderTextColor="#999"
         keyboardType="number-pad"
         maxLength={6}
         autoFocus
       />
 
       <View style={styles.buttonContainer}>
-        <Button
-          title={loading ? "Verificando..." : "Confirmar Código"}
-          onPress={handleVerify}
-          disabled={loading}
+        <AppButton
+          title={isSubmitting ? "Verificando..." : "Confirmar Código"}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isSubmitting}
         />
       </View>
     </View>

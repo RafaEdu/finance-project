@@ -1,16 +1,20 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../constants/colors";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: colors.background,
+  },
+  flex1: {
+    flex: 1,
   },
   // --- ABAS (TABS) ---
   tabContainer: {
     flexDirection: "row",
     marginBottom: 20,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colors.segmentBackground,
     borderRadius: 10,
     padding: 2,
   },
@@ -21,20 +25,19 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   tabButtonActive: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
   tabText: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   tabTextActive: {
-    color: "#27ae60",
     fontWeight: "bold",
   },
   // --- COMUNS ---
@@ -42,51 +45,50 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#27ae60",
     textAlign: "center",
   },
   label: {
     fontSize: 16,
-    color: "#333",
+    color: colors.text,
     marginBottom: 5,
     marginTop: 10,
     fontWeight: "500",
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     fontSize: 16,
   },
   dateButton: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     alignItems: "center",
     marginBottom: 10,
   },
   dateText: {
     fontSize: 16,
-    color: "#333",
+    color: colors.text,
   },
   // --- SELETOR (ROLETA) ---
   selectorButton: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   selectorText: {
     fontSize: 16,
-    color: "#333",
+    color: colors.text,
   },
   // --- SWITCH ---
   switchContainer: {
@@ -95,23 +97,23 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     padding: 10,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.borderLight,
   },
   switchLabel: {
     fontSize: 14,
-    color: "#333",
+    color: colors.text,
     flex: 1,
   },
   // --- LISTA DE PARCELAS ---
   listContainer: {
     marginTop: 10,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.borderLight,
     padding: 10,
   },
   installmentRow: {
@@ -122,17 +124,17 @@ export const styles = StyleSheet.create({
   },
   installmentLabel: {
     fontSize: 14,
-    color: "#555",
+    color: colors.textMedium,
   },
   installmentValueFixed: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.text,
   },
   installmentInput: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: colors.surfaceSubtle,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: colors.border,
     borderRadius: 5,
     paddingVertical: 5,
     paddingHorizontal: 10,
@@ -141,29 +143,19 @@ export const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: "#eee",
+    backgroundColor: colors.borderLight,
   },
-  // --- FOOTER & TOAST ---
+  // --- FOOTER ---
   footerContainer: {
     marginTop: 20,
     marginBottom: 20,
   },
-  toastContainer: {
-    position: "absolute",
-    bottom: 80,
-    left: 20,
-    right: 20,
-    backgroundColor: "#333",
-    padding: 15,
-    borderRadius: 25,
+  cancelButton: {
+    marginTop: 10,
     alignItems: "center",
-    justifyContent: "center",
-    elevation: 5,
-    zIndex: 999,
   },
-  toastText: {
-    color: "#fff",
-    fontWeight: "bold",
+  cancelText: {
+    color: colors.textMuted,
   },
   // --- MODAL DA ROLETA ---
   modalOverlay: {
@@ -175,7 +167,7 @@ export const styles = StyleSheet.create({
   modalContent: {
     width: "80%",
     height: "60%",
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 10,
     padding: 20,
   },
@@ -184,46 +176,19 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     textAlign: "center",
-    color: "#333",
+    color: colors.text,
   },
   modalItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.borderLight,
     alignItems: "center",
   },
   modalItemText: {
     fontSize: 18,
-    color: "#333",
+    color: colors.text,
   },
-  // --- TAG SELECTOR ---
-  tagSelectorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 5,
-    gap: 8,
-  },
-  tagSelector: {
-    flex: 1,
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderStyle: "dashed",
-  },
-  tagSelectorText: {
-    fontSize: 14,
-    color: "#333",
-  },
-  tagSelectorPlaceholder: {
-    fontSize: 14,
-    color: "#999",
-    marginLeft: 6,
-  },
-  tagAddButton: {
-    padding: 4,
+  listPadding: {
+    paddingBottom: 100,
   },
 });

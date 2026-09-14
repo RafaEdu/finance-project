@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
-  Button,
   TouchableOpacity,
   Alert,
   ScrollView,
@@ -11,52 +9,79 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as ImagePicker from "expo-image-picker";
-import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { styles } from "./ProfileScreen.styles";
+import { colors } from "../../constants/colors";
+import { ROUTES } from "../../constants/routes";
+import {
+  signOut,
+  updateUser,
+  sendPasswordReset,
+} from "../../services/authService";
+import { uploadAvatar } from "../../services/storageService";
+import { profileNameSchema, passwordSchema } from "../../utils/validators";
+import { confirmDestructive } from "../../components/ConfirmDialog";
+import ControlledFormField from "../../components/ControlledFormField";
+import AppButton from "../../components/AppButton";
+import Toast from "../../components/Toast";
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useAuth();
 
-  const [name, setName] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
-  // Estado para controlar carregamentos
-  const [loading, setLoading] = useState(false);
-  const [loadingName, setLoadingName] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-
-  // Estado local da imagem para preview instantâneo
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [toast, setToast] = useState({ visible: false, message: "" });
+
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: "" }), 1500);
+  };
+
+  const {
+    control: nameControl,
+    handleSubmit: handleNameSubmit,
+    reset: resetName,
+    formState: { isSubmitting: isSavingName },
+  } = useForm({
+    resolver: zodResolver(profileNameSchema),
+    defaultValues: { name: "" },
+  });
+
+  const {
+    control: passwordControl,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPassword,
+    formState: { isSubmitting: isSavingPassword },
+  } = useForm({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { password: "" },
+  });
 
   useEffect(() => {
-    if (user?.user_metadata?.full_name) {
-      setName(user.user_metadata.full_name);
-    }
+    resetName({ name: user?.user_metadata?.full_name || "" });
     if (user?.user_metadata?.avatar_url) {
       setAvatarUrl(user.user_metadata.avatar_url);
     }
-  }, [user]);
+  }, [user, resetName]);
 
   const handleLogout = () => {
-    Alert.alert("Sair da Conta", "Tem certeza que deseja sair?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Sair",
-        style: "destructive",
-        onPress: async () => {
-          await supabase.auth.signOut();
-        },
+    confirmDestructive({
+      title: "Sair da Conta",
+      message: "Tem certeza que deseja sair?",
+      confirmText: "Sair",
+      onConfirm: async () => {
+        await signOut();
       },
-    ]);
+    });
   };
 
-  // Função para abrir a galeria e selecionar imagem (CORRIGIDA)
+  // Função para abrir a galeria e selecionar imagem
   const pickImage = async () => {
     try {
-      // 1. Solicitar permissão explicitamente
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -68,21 +93,17 @@ export default function ProfileScreen({ navigation }) {
         return;
       }
 
-      // 2. Abre a galeria com as opções corretas
       const result = await ImagePicker.launchImageLibraryAsync({
-        // CORREÇÃO AQUI: Usa MediaTypeOptions em vez de MediaType
         mediaTypes: ImagePicker.MediaType,
-        allowsEditing: true, // Permite cortar/editar
-        aspect: [1, 1], // Formato quadrado
-        quality: 1, // Qualidade máxima
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
       });
 
       if (!result.canceled) {
-        // Se o usuário selecionou, faz o upload
         await uploadImage(result.assets[0].uri);
       }
-    } catch (error) {
-      console.error("Erro no pickImage:", error); // Log para ajudar no debug
+    } catch {
       Alert.alert("Erro", "Erro ao abrir galeria.");
     }
   };
@@ -92,35 +113,19 @@ export default function ProfileScreen({ navigation }) {
     try {
       setUploadingImage(true);
 
-      // 1. Processar o arquivo para formato que o Supabase aceita (Blob/ArrayBuffer)
       const response = await fetch(uri);
       const blob = await response.blob();
       const arrayBuffer = await new Response(blob).arrayBuffer();
 
-      // 2. Definir nome do arquivo (usamos timestamp para evitar cache)
-      // Caminho: user_id/timestamp.png
-      const fileExt = "png";
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      // 3. Upload para o bucket 'avatars'
-      const { error: uploadError, data } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, arrayBuffer, {
-          contentType: "image/png",
-          upsert: true, // Substitui se já existir arquivo com mesmo nome
-        });
+      const { data: publicUrl, error: uploadError } = await uploadAvatar(
+        user.id,
+        arrayBuffer,
+        { contentType: "image/png", fileExt: "png" },
+      );
 
       if (uploadError) throw uploadError;
 
-      // 4. Obter a URL pública da imagem
-      const { data: publicUrlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      // 5. Atualizar perfil do usuário com a nova URL
-      const { error: updateUserError } = await supabase.auth.updateUser({
+      const { error: updateUserError } = await updateUser({
         data: { avatar_url: publicUrl },
       });
 
@@ -129,7 +134,6 @@ export default function ProfileScreen({ navigation }) {
       setAvatarUrl(publicUrl);
       Alert.alert("Sucesso", "Foto de perfil atualizada!");
     } catch (error) {
-      console.log(error);
       Alert.alert(
         "Erro no Upload",
         error.message || "Não foi possível enviar a imagem.",
@@ -139,163 +143,146 @@ export default function ProfileScreen({ navigation }) {
     }
   };
 
-  const handleUpdateName = async () => {
-    if (!name.trim()) {
-      Alert.alert("Erro", "O nome não pode estar vazio.");
-      return;
-    }
-    setLoadingName(true);
-    const { error } = await supabase.auth.updateUser({
-      data: { full_name: name },
+  const onSubmitName = async ({ name }) => {
+    const { error } = await updateUser({
+      data: { full_name: name.trim() },
     });
     if (error) Alert.alert("Erro", error.message);
-    else Alert.alert("Sucesso", "Nome atualizado!");
-    setLoadingName(false);
+    else showToast("Nome atualizado!");
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      Alert.alert("Erro", "A senha deve ter pelo menos 6 caracteres.");
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
-    setLoading(false);
+  const onSubmitPassword = async ({ password }) => {
+    const { error } = await sendPasswordReset(user.email);
 
     if (error) {
       Alert.alert("Erro ao enviar código", error.message);
-    } else {
-      Alert.alert(
-        "Verificação Enviada",
-        `Um código de 6 dígitos foi enviado para ${user.email}. Digite-o na próxima tela para confirmar a nova senha.`,
-        [
-          {
-            text: "OK, recebi o código",
-            onPress: () => {
-              navigation.navigate("VerifyUpdate", {
-                email: user.email,
-                type: "recovery",
-                newPassword: newPassword,
-              });
-              setNewPassword("");
-            },
-          },
-        ],
-      );
+      return;
     }
+
+    Alert.alert(
+      "Verificação Enviada",
+      `Um código de 6 dígitos foi enviado para ${user.email}. Digite-o na próxima tela para confirmar a nova senha.`,
+      [
+        {
+          text: "OK, recebi o código",
+          onPress: () => {
+            navigation.navigate(ROUTES.verifyUpdate, {
+              email: user.email,
+              type: "recovery",
+              newPassword: password,
+            });
+            resetPassword({ password: "" });
+          },
+        },
+      ],
+    );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        {/* Container da Foto de Perfil */}
-        <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
-          {uploadingImage ? (
-            <ActivityIndicator size="large" color="#fff" />
-          ) : avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={{ width: 100, height: 100, borderRadius: 50 }}
-            />
-          ) : (
-            <Ionicons name="person" size={60} color="#fff" />
-          )}
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.header}>
+          {/* Container da Foto de Perfil */}
+          <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+            {uploadingImage ? (
+              <ActivityIndicator size="large" color={colors.white} />
+            ) : avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+            ) : (
+              <Ionicons name="person" size={60} color={colors.white} />
+            )}
 
-          {/* Ícone de edição sobreposto */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              right: 0,
-              backgroundColor: "#2980b9", // Cor de destaque
-              borderRadius: 15,
-              padding: 4,
-              borderWidth: 2,
-              borderColor: "#fff",
-            }}
-          >
-            <Ionicons name="camera" size={16} color="#fff" />
-          </View>
-        </TouchableOpacity>
+            {/* Ícone de edição sobreposto */}
+            <View style={styles.editBadge}>
+              <Ionicons name="camera" size={16} color={colors.white} />
+            </View>
+          </TouchableOpacity>
 
-        <Text style={styles.emailText}>{user?.email}</Text>
-      </View>
+          <Text style={styles.emailText}>{user?.email}</Text>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Dados Pessoais</Text>
-        <Text style={styles.label}>Nome de Exibição</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dados Pessoais</Text>
+          <Text style={styles.label}>Nome de Exibição</Text>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
+          <ControlledFormField
+            control={nameControl}
+            name="name"
+            inputStyle={styles.fieldInput}
             placeholder="Seu nome"
-            placeholderTextColor="#999"
             autoCapitalize="words"
+            rightAccessory={
+              <TouchableOpacity style={styles.eyeIcon}>
+                <Ionicons name="pencil" size={20} color="gray" />
+              </TouchableOpacity>
+            }
           />
-          <TouchableOpacity style={styles.eyeIcon}>
-            <Ionicons name="pencil" size={20} color="gray" />
+
+          <AppButton
+            title={isSavingName ? "Salvando..." : "Salvar Nome"}
+            onPress={handleNameSubmit(onSubmitName)}
+            disabled={isSavingName}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.tagsButton}
+            onPress={() => navigation.navigate(ROUTES.tags)}
+          >
+            <View style={styles.tagsButtonContent}>
+              <Ionicons name="pricetag" size={20} color={colors.accent} />
+              <Text style={styles.tagsButtonText}>Minhas Tags</Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={colors.placeholder}
+            />
           </TouchableOpacity>
         </View>
 
-        <Button
-          title={loadingName ? "Salvando..." : "Salvar Nome"}
-          onPress={handleUpdateName}
-          disabled={loadingName}
-        />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Segurança</Text>
+          <Text style={styles.label}>Alterar Senha</Text>
 
-      <View style={styles.section}>
-        <TouchableOpacity
-          style={styles.tagsButton}
-          onPress={() => navigation.navigate("Tags")}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="pricetag" size={20} color="#2980b9" />
-            <Text style={styles.tagsButtonText}>Minhas Tags</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#999" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Segurança</Text>
-        <Text style={styles.label}>Alterar Senha</Text>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={newPassword}
-            onChangeText={setNewPassword}
+          <ControlledFormField
+            control={passwordControl}
+            name="password"
+            inputStyle={styles.fieldInput}
             placeholder="Nova senha"
-            placeholderTextColor="#999"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
+            rightAccessory={
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={24}
+                  color="gray"
+                />
+              </TouchableOpacity>
+            }
           />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? "eye-off" : "eye"}
-              size={24}
-              color="gray"
-            />
-          </TouchableOpacity>
+
+          <AppButton
+            title={isSavingPassword ? "Enviando código..." : "Atualizar Senha"}
+            onPress={handlePasswordSubmit(onSubmitPassword)}
+            disabled={isSavingPassword}
+          />
         </View>
 
-        <Button
-          title={loading ? "Enviando código..." : "Atualizar Senha"}
-          onPress={handleChangePassword}
-          disabled={loading}
-        />
-      </View>
-
-      <View style={styles.logoutContainer}>
-        <Button title="Sair (Logout)" color="#e74c3c" onPress={handleLogout} />
-      </View>
-    </ScrollView>
+        <View style={styles.logoutContainer}>
+          <AppButton
+            title="Sair (Logout)"
+            color={colors.expense}
+            onPress={handleLogout}
+          />
+        </View>
+      </ScrollView>
+      <Toast visible={toast.visible} message={toast.message} />
+    </View>
   );
 }

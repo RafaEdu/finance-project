@@ -1,66 +1,65 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from "react-native";
-import { supabase } from "../../lib/supabase";
+import React from "react";
+import { View, Text, Alert, TouchableOpacity } from "react-native";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "../../services/authService";
 import { styles } from "./LoginScreen.styles";
+import { ROUTES } from "../../constants/routes";
+import { loginSchema } from "../../utils/validators";
+import ControlledFormField from "../../components/ControlledFormField";
+import AppButton from "../../components/AppButton";
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
-  async function signInWithEmail() {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password,
-    });
-
+  const onSubmit = async ({ email, password }) => {
+    const { error } = await signIn(email, password);
     if (error) Alert.alert("Erro no Login", error.message);
-    setLoading(false);
-  }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo de volta!</Text>
 
-      <TextInput
-        style={styles.input}
-        onChangeText={setEmail}
-        value={email}
+      <ControlledFormField
+        control={control}
+        name="email"
+        inputStyle={styles.input}
         placeholder="email@endereco.com"
-        placeholderTextColor="#999"
         autoCapitalize="none"
       />
-      <TextInput
-        style={styles.input}
-        onChangeText={setPassword}
-        value={password}
-        secureTextEntry={true}
+      <ControlledFormField
+        control={control}
+        name="password"
+        inputStyle={styles.input}
+        secureTextEntry
         placeholder="Senha"
-        placeholderTextColor="#999"
       />
 
       <View style={styles.buttonContainer}>
-        <Button title="Entrar" disabled={loading} onPress={signInWithEmail} />
+        <AppButton
+          title="Entrar"
+          disabled={isSubmitting}
+          onPress={handleSubmit(onSubmit)}
+        />
       </View>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate("Register")}
+        onPress={() => navigation.navigate(ROUTES.register)}
         style={styles.link}
       >
         <Text style={styles.linkText}>Não tem conta? Registre-se</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate("ForgotPassword")}
+        onPress={() => navigation.navigate(ROUTES.forgotPassword)}
         style={styles.link}
       >
         <Text style={styles.linkText}>Esqueceu a senha?</Text>

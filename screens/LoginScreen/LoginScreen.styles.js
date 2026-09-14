@@ -1,11 +1,12 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../../constants/colors";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
   },
   title: {
     fontSize: 24,
@@ -15,7 +16,7 @@ export const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderColor: "#ccc",
+    borderColor: colors.borderStrong,
     borderWidth: 1,
     borderRadius: 5,
     marginBottom: 15,

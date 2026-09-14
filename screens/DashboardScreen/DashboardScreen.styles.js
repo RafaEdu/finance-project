@@ -1,9 +1,13 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../../constants/colors";
 
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f6fa",
+    backgroundColor: colors.background,
+  },
+  flex1: {
+    flex: 1,
   },
   scrollContent: {
     padding: 20,
@@ -17,13 +21,13 @@ export const styles = StyleSheet.create({
   greeting: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: colors.textStrong,
     marginBottom: 20,
   },
   screenTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: colors.textStrong,
     marginBottom: 4,
   },
   profileIcon: {
@@ -34,7 +38,7 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 15,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colors.segmentBackground,
     borderRadius: 10,
     padding: 2,
   },
@@ -45,20 +49,20 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeFilterButton: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
   },
   filterText: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: colors.textMuted,
     fontWeight: "600",
   },
   activeFilterText: {
-    color: "#0000ff",
+    color: colors.primary,
     fontWeight: "bold",
   },
   // Navegação de Data
@@ -67,11 +71,11 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     padding: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.borderLight,
   },
   dateNavButton: {
     padding: 5,
@@ -79,7 +83,7 @@ export const styles = StyleSheet.create({
   dateNavText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
+    color: colors.text,
   },
   // Resumo (Cards Pequenos)
   summaryContainer: {
@@ -89,27 +93,27 @@ export const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 10,
     padding: 15,
     marginHorizontal: 5,
     alignItems: "center",
     elevation: 2,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
   incomeCard: {
     borderLeftWidth: 4,
-    borderLeftColor: "#27ae60",
+    borderLeftColor: colors.income,
   },
   expenseCard: {
     borderLeftWidth: 4,
-    borderLeftColor: "#e74c3c",
+    borderLeftColor: colors.expense,
   },
   summaryLabel: {
     fontSize: 12,
-    color: "#7f8c8d",
+    color: colors.textMuted,
     marginTop: 5,
   },
   summaryValue: {
@@ -127,12 +131,12 @@ export const styles = StyleSheet.create({
   },
   balanceToggleText: {
     fontSize: 14,
-    color: "#666",
+    color: colors.textSecondary,
     marginRight: 5,
   },
   // Card de Saldo Grande
   balanceCard: {
-    backgroundColor: "#34495e",
+    backgroundColor: colors.darkSurface,
     borderRadius: 15,
     padding: 20,
     alignItems: "center",
@@ -141,14 +145,14 @@ export const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontSize: 14,
-    color: "#bdc3c7",
+    color: colors.textLight,
     marginBottom: 5,
     textTransform: "uppercase",
   },
   balanceValue: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#fff",
+    color: colors.white,
   },
   secondaryBalanceContainer: {
     marginTop: 15,
@@ -162,19 +166,19 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: colors.textStrong,
     marginBottom: 10,
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 10,
     paddingHorizontal: 10,
     marginBottom: 15,
     height: 40,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.borderLight,
   },
   searchIcon: {
     marginRight: 10,
@@ -188,18 +192,18 @@ export const styles = StyleSheet.create({
     marginTop: 30,
   },
   emptyText: {
-    color: "#95a5a6",
+    color: colors.textSubtle,
     fontSize: 16,
   },
   transactionCard: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: colors.white,
     borderRadius: 12,
     padding: 15,
     marginBottom: 10,
     alignItems: "center",
     elevation: 1,
-    shadowColor: "#000",
+    shadowColor: colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
@@ -220,30 +224,30 @@ export const styles = StyleSheet.create({
   transactionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: colors.textStrong,
     marginRight: 8,
   },
   installmentBadge: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: colors.expense,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
     alignSelf: "flex-start",
   },
   installmentText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 10,
     fontWeight: "bold",
   },
   recurrenceBadge: {
-    backgroundColor: "#27ae60",
+    backgroundColor: colors.income,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
     alignSelf: "flex-start",
   },
   recurrenceText: {
-    color: "#fff",
+    color: colors.white,
     fontSize: 10,
     fontWeight: "bold",
   },
@@ -259,11 +263,11 @@ export const styles = StyleSheet.create({
   },
   transactionDate: {
     fontSize: 12,
-    color: "#95a5a6",
+    color: colors.textSubtle,
   },
   transactionDescription: {
     fontSize: 12,
-    color: "#7f8c8d",
+    color: colors.textMuted,
     marginTop: 2,
   },
   transactionValue: {

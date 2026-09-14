@@ -37,11 +37,13 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# tooling
+.eslintcache
+coverage/
+
 # generated native folders
 /ios
 /android
 
 # other
-# scheme.md
-
 .github/
