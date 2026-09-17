@@ -189,6 +189,6 @@ export const styles = StyleSheet.create({
     color: colors.text,
   },
   listPadding: {
-    paddingBottom: 100,
+    paddingBottom: 24,
   },
 });

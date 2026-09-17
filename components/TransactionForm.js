@@ -331,7 +331,7 @@ export default function TransactionForm({ type, navigation, route }) {
           <ControlledFormField
             control={control}
             name="description"
-            label="Descrição (opcional)"
+            label="Descrição"
             inputStyle={styles.input}
             labelStyle={styles.label}
             placeholder="Detalhes adicionais..."
@@ -437,24 +437,24 @@ export default function TransactionForm({ type, navigation, route }) {
               </View>
             </>
           )}
-        </ScrollView>
 
-        <View style={styles.footerContainer}>
-          <AppButton
-            title={isSubmitting ? "Salvando..." : "Salvar"}
-            color={config.color}
-            onPress={handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          />
-          {transactionToEdit && (
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+          <View style={styles.footerContainer}>
+            <AppButton
+              title={isSubmitting ? "Salvando..." : "Salvar"}
+              color={config.color}
+              onPress={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+            />
+            {transactionToEdit && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </ScrollView>
 
         {showDatePicker && (
           <DateTimePicker
