@@ -1,4 +1,10 @@
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+} from "react";
 import { getSession, onAuthStateChange } from "../services/authService";
 
 const AuthContext = createContext({});
@@ -27,11 +33,20 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const value = {
-    session,
-    user: session?.user,
-    loading,
-  };
+  const value = useMemo(() => {
+    const user = session?.user;
+    const displayName =
+      user?.user_metadata?.full_name?.trim() ||
+      user?.email?.split("@")[0] ||
+      "";
+
+    return {
+      session,
+      user,
+      displayName,
+      loading,
+    };
+  }, [session, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

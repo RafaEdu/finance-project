@@ -8,3 +8,8 @@ export function normalizeDescription(value) {
 export function removeAccents(value) {
   return (value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+
+// Normaliza um texto para busca: sem acentos, minúsculo e sem espaços nas pontas.
+export function normalizeForSearch(value) {
+  return removeAccents(value).toLowerCase().trim();
+}

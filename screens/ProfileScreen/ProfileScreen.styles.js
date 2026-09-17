@@ -93,6 +93,9 @@ export const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
+  fieldContainer: {
+    marginBottom: 15,
+  },
   eyeIcon: {
     padding: 10,
   },

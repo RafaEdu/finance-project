@@ -18,12 +18,6 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  greeting: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: colors.textStrong,
-    marginBottom: 20,
-  },
   screenTitle: {
     fontSize: 28,
     fontWeight: "bold",

@@ -25,10 +25,10 @@
 - [ ] Mostrar logs no console para corrigir e averiguar erros;
 - [ ] Corrigir sumiço dos placeholders no apk em celulares com tema escuro;
 - [x] Padronizar telas de cadastro de movimentação;
-- [ ] Poder pesquisar ignorando maiusculas, minusculas e acentos;
+- [x] Poder pesquisar ignorando maiusculas, minusculas e acentos;
 - [ ] Ajustar o formulario de movimentações para que o fundo do header e do bottom não tapem ele;
 - [ ] Ajustar valores apresentados no insights, está mostrando valores totatis quando filtro por qualquer período;
-- [ ] Remover títulos 'Finance' de totas telas. Colocar o "Olá, *" no lugar;
+- [x] Remover títulos 'Finance' de totas telas. Colocar o "Olá, *" no lugar;
 - [ ] Quando for cadastrar uma tag pelas telas de movimentações, assim que a tag for cadastrada deve-se voltar automaticamente para o cadastro que estava sendo feito de movimentação;
 
 ### Ideias futuras:

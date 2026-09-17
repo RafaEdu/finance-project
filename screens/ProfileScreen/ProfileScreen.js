@@ -208,6 +208,7 @@ export default function ProfileScreen({ navigation }) {
           <ControlledFormField
             control={nameControl}
             name="name"
+            containerStyle={styles.fieldContainer}
             inputStyle={styles.fieldInput}
             placeholder="Seu nome"
             autoCapitalize="words"
@@ -249,6 +250,7 @@ export default function ProfileScreen({ navigation }) {
           <ControlledFormField
             control={passwordControl}
             name="password"
+            containerStyle={styles.fieldContainer}
             inputStyle={styles.fieldInput}
             placeholder="Nova senha"
             secureTextEntry={!showPassword}
@@ -276,7 +278,7 @@ export default function ProfileScreen({ navigation }) {
 
         <View style={styles.logoutContainer}>
           <AppButton
-            title="Sair (Logout)"
+            title="Sair da Conta"
             color={colors.expense}
             onPress={handleLogout}
           />

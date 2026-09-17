@@ -19,7 +19,7 @@ import { colors } from "../../constants/colors";
 import { ROUTES } from "../../constants/routes";
 import { formatCurrency } from "../../utils/currency";
 import { getDateRange } from "../../utils/date";
-import { removeAccents } from "../../utils/string";
+import { normalizeForSearch } from "../../utils/string";
 import { useTags } from "../../hooks/useTags";
 import { useTransactions } from "../../hooks/useTransactions";
 import { deleteTransaction, getSums } from "../../services/transactionsService";
@@ -55,9 +55,6 @@ export default function DashboardScreen({ navigation }) {
     refreshing,
     refresh: refreshTransactions,
   } = useTransactions({ startISO, endISO });
-
-  const displayName =
-    user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
   const tagsMap = useMemo(() => {
     const map = {};
@@ -167,10 +164,17 @@ export default function DashboardScreen({ navigation }) {
   };
 
   const filteredTransactions = transactions.filter((item) => {
-    const search = removeAccents(searchText.toLowerCase());
-    const name = removeAccents((item.name || "").toLowerCase());
-    const description = removeAccents((item.description || "").toLowerCase());
-    return name.includes(search) || description.includes(search);
+    const search = normalizeForSearch(searchText);
+    if (!search) return true;
+
+    const tag = item.tagId ? tagsMap[item.tagId] : null;
+    const haystack = normalizeForSearch(
+      [item.name, item.description, tag?.name].filter(Boolean).join(" ")
+    );
+
+    return search
+      .split(/\s+/)
+      .every((term) => haystack.includes(term));
   });
 
   if (loading && !refreshing && transactions.length === 0) {
@@ -194,8 +198,6 @@ export default function DashboardScreen({ navigation }) {
           // Garante que toques nos itens da lista funcionem mesmo com teclado aberto
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.greeting}>Olá, {displayName}</Text>
-
           <PeriodFilter value={filterType} onChange={setFilterType} />
 
           <DateNavigator

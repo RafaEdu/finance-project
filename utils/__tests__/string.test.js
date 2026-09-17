@@ -1,4 +1,4 @@
-import { normalizeDescription, removeAccents } from "../string";
+import { normalizeDescription, removeAccents, normalizeForSearch } from "../string";
 
 describe("normalizeDescription", () => {
   it("retorna null para vazio ou apenas espaços", () => {
@@ -21,5 +21,22 @@ describe("removeAccents", () => {
   it("lida com entradas vazias", () => {
     expect(removeAccents("")).toBe("");
     expect(removeAccents(null)).toBe("");
+  });
+});
+
+describe("normalizeForSearch", () => {
+  it("ignora maiúsculas/minúsculas e acentos", () => {
+    expect(normalizeForSearch("Salário")).toBe("salario");
+    expect(normalizeForSearch("SALÁRIO")).toBe("salario");
+    expect(normalizeForSearch("salario")).toBe("salario");
+  });
+
+  it("remove espaços nas pontas", () => {
+    expect(normalizeForSearch("  Salário  ")).toBe("salario");
+  });
+
+  it("lida com entradas vazias", () => {
+    expect(normalizeForSearch("")).toBe("");
+    expect(normalizeForSearch(null)).toBe("");
   });
 });

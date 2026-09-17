@@ -54,6 +54,20 @@ function ProfileHeaderButton({ navigation }) {
   );
 }
 
+function HeaderGreeting() {
+  const { displayName } = useAuth();
+
+  return (
+    <Text
+      style={appStyles.greetingTitle}
+      numberOfLines={1}
+      ellipsizeMode="tail"
+    >
+      Olá, {displayName}
+    </Text>
+  );
+}
+
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -61,7 +75,7 @@ function AppTabs() {
       screenOptions={({ route, navigation }) => ({
         headerShown: true,
         headerTitleAlign: "left",
-        headerTitle: () => <Text style={appStyles.appTitle}>Finance</Text>,
+        headerTitle: () => <HeaderGreeting />,
         headerRight: () => <ProfileHeaderButton navigation={navigation} />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: "gray",
@@ -135,9 +149,7 @@ function Navigation() {
               options={({ navigation }) => ({
                 headerShown: true,
                 headerTitleAlign: "left",
-                headerTitle: () => (
-                  <Text style={appStyles.appTitle}>Finance</Text>
-                ),
+                headerTitle: () => <HeaderGreeting />,
                 headerRight: () => (
                   <ProfileHeaderButton navigation={navigation} />
                 ),
@@ -185,10 +197,11 @@ export default function App() {
 }
 
 const appStyles = StyleSheet.create({
-  appTitle: {
-    fontSize: 22,
+  greetingTitle: {
+    fontSize: 18,
     fontWeight: "bold",
     color: colors.primary,
+    maxWidth: 220,
   },
   profileButton: {
     marginRight: 15,
