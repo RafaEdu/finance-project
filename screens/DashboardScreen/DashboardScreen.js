@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../../context/AuthContext";
 import { styles } from "./DashboardScreen.styles";
@@ -32,6 +33,7 @@ import TransactionCard from "../../components/TransactionCard";
 
 export default function DashboardScreen({ navigation }) {
   const { user } = useAuth();
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Estados de Filtro
   const [filterType, setFilterType] = useState("day");
@@ -191,7 +193,10 @@ export default function DashboardScreen({ navigation }) {
     >
       <View style={styles.container}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: tabBarHeight + 16 },
+          ]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useAuth } from "../../context/AuthContext";
 import { styles } from "./InsightsScreen.styles";
 import { colors } from "../../constants/colors";
@@ -25,6 +26,7 @@ import TransactionCard from "../../components/TransactionCard";
 
 export default function InsightsScreen() {
   const { user } = useAuth();
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Tags
   const { tags, refresh: refreshTags } = useTags();
@@ -138,7 +140,10 @@ export default function InsightsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: tabBarHeight + 16 },
+        ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }

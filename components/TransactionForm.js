@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -46,6 +47,7 @@ const COUNT_OPTIONS = Array.from({ length: 47 }, (_, i) => i + 2);
 export default function TransactionForm({ type, navigation, route }) {
   const config = TRANSACTION_CONFIG[type];
   const { user } = useAuth();
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Modos: 'single' (único) ou 'recurring' (recorrente/parcelado)
   const [mode, setMode] = useState("single");
@@ -318,7 +320,12 @@ export default function TransactionForm({ type, navigation, route }) {
 
         <Text style={[styles.title, { color: config.color }]}>{title}</Text>
 
-        <ScrollView contentContainerStyle={styles.listPadding}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.listPadding,
+            { paddingBottom: tabBarHeight + 16 },
+          ]}
+        >
           <ControlledFormField
             control={control}
             name="name"

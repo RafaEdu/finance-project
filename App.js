@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ROUTES } from "./constants/routes";
 import { colors } from "./constants/colors";
 import LoadingView from "./components/LoadingView";
+import AppTabBar from "./components/AppTabBar";
 
 import LoginScreen from "./screens/LoginScreen/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen/RegisterScreen";
@@ -72,28 +73,12 @@ function AppTabs() {
   return (
     <Tab.Navigator
       initialRouteName={ROUTES.dashboard}
-      screenOptions={({ route, navigation }) => ({
+      tabBar={(props) => <AppTabBar {...props} />}
+      screenOptions={({ navigation }) => ({
         headerShown: true,
         headerTitleAlign: "left",
         headerTitle: () => <HeaderGreeting />,
         headerRight: () => <ProfileHeaderButton navigation={navigation} />,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: "gray",
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
-          if (route.name === ROUTES.dashboard) {
-            iconName = focused ? "search" : "search-outline";
-          } else if (route.name === ROUTES.newIncome) {
-            iconName = focused ? "arrow-up-circle" : "arrow-up-circle-outline";
-          } else if (route.name === ROUTES.newExpense) {
-            iconName = focused
-              ? "arrow-down-circle"
-              : "arrow-down-circle-outline";
-          } else if (route.name === ROUTES.insights) {
-            iconName = focused ? "analytics" : "analytics-outline";
-          }
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
       })}
     >
       <Tab.Screen
