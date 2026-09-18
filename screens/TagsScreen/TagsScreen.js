@@ -23,6 +23,7 @@ import EmptyState from "../../components/EmptyState";
 import AppButton from "../../components/AppButton";
 import ControlledFormField from "../../components/ControlledFormField";
 import ColorPicker from "../../components/ColorPicker";
+import ColorGradientPicker from "../../components/ColorGradientPicker";
 import Toast from "../../components/Toast";
 
 export default function TagsScreen() {
@@ -52,6 +53,9 @@ export default function TagsScreen() {
   const [newTagHexInput, setNewTagHexInput] = useState(TAG_COLORS[0]);
   const newTagName = watchCreate("name");
   const newTagColor = watchCreate("color");
+
+  // Gradiente aberto ao tocar na bolinha de cor ("create" | "edit" | null)
+  const [pickerTarget, setPickerTarget] = useState(null);
 
   const [toast, setToast] = useState({ visible: false, message: "" });
 
@@ -122,6 +126,7 @@ export default function TagsScreen() {
 
     resetCreate({ name: "", color: TAG_COLORS[0] });
     setNewTagHexInput(TAG_COLORS[0]);
+    setPickerTarget(null);
     fetchTags();
     showToast("Tag criada!");
   };
@@ -150,6 +155,7 @@ export default function TagsScreen() {
   };
 
   const openEditModal = (tag) => {
+    setPickerTarget(null);
     setEditingTag(tag);
     resetEdit({ name: tag.name, color: tag.color || TAG_COLORS[0] });
     setEditHexInput(tag.color || TAG_COLORS[0]);
@@ -170,6 +176,7 @@ export default function TagsScreen() {
 
     setEditModalVisible(false);
     setEditingTag(null);
+    setPickerTarget(null);
     fetchTags();
     showToast("Tag atualizada!");
   };
@@ -231,14 +238,18 @@ export default function TagsScreen() {
             maxLength={30}
           />
 
-          <Text style={styles.colorLabel}>Cor (selecione ou digite):</Text>
+          <Text style={styles.colorLabel}>Cor (toque na bolinha ou digite):</Text>
           <ColorPicker
             selectedColor={newTagColor}
             onSelect={handleNewColorSelect}
           />
 
           <View style={styles.hexInputRow}>
-            <View
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                setPickerTarget((prev) => (prev === "create" ? null : "create"))
+              }
               style={[
                 styles.hexPreviewDot,
                 {
@@ -246,6 +257,7 @@ export default function TagsScreen() {
                     ? newTagColor
                     : colors.borderStrong,
                 },
+                pickerTarget === "create" && styles.hexPreviewDotActive,
               ]}
             />
             <TextInput
@@ -260,6 +272,13 @@ export default function TagsScreen() {
           </View>
           {!!createErrors.color && (
             <Text style={styles.errorText}>{createErrors.color.message}</Text>
+          )}
+
+          {pickerTarget === "create" && (
+            <ColorGradientPicker
+              color={newTagColor}
+              onSelect={handleNewColorSelect}
+            />
           )}
 
           {/* Preview em tempo real */}
@@ -322,66 +341,89 @@ export default function TagsScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Editar Tag</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.modalTitle}>Editar Tag</Text>
 
-              <ControlledFormField
-                control={editControl}
-                name="name"
-                label="Nome"
-                inputStyle={styles.input}
-                labelStyle={styles.label}
-                placeholder="Nome da tag"
-                maxLength={30}
-              />
-
-              <Text style={styles.colorLabel}>Cor (selecione ou digite):</Text>
-              <ColorPicker
-                selectedColor={editColor}
-                onSelect={handleEditColorSelect}
-              />
-
-              <View style={styles.hexInputRow}>
-                <View
-                  style={[
-                    styles.hexPreviewDot,
-                    {
-                      backgroundColor: isValidHex(editColor)
-                        ? editColor
-                        : colors.borderStrong,
-                    },
-                  ]}
+                <ControlledFormField
+                  control={editControl}
+                  name="name"
+                  label="Nome"
+                  inputStyle={styles.input}
+                  labelStyle={styles.label}
+                  placeholder="Nome da tag"
+                  maxLength={30}
                 />
-                <TextInput
-                  style={styles.hexInput}
-                  placeholder="#2980b9"
-                  placeholderTextColor={colors.placeholder}
-                  value={editHexInput}
-                  onChangeText={handleEditHexChange}
-                  maxLength={7}
-                  autoCapitalize="none"
+
+                <Text style={styles.colorLabel}>
+                  Cor (toque na bolinha ou digite):
+                </Text>
+                <ColorPicker
+                  selectedColor={editColor}
+                  onSelect={handleEditColorSelect}
                 />
-              </View>
-              {!!editErrors.color && (
-                <Text style={styles.errorText}>{editErrors.color.message}</Text>
-              )}
 
-              {/* Preview em tempo real */}
-              {renderTagPreview(editName, editColor)}
+                <View style={styles.hexInputRow}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() =>
+                      setPickerTarget((prev) =>
+                        prev === "edit" ? null : "edit",
+                      )
+                    }
+                    style={[
+                      styles.hexPreviewDot,
+                      {
+                        backgroundColor: isValidHex(editColor)
+                          ? editColor
+                          : colors.borderStrong,
+                      },
+                      pickerTarget === "edit" && styles.hexPreviewDotActive,
+                    ]}
+                  />
+                  <TextInput
+                    style={styles.hexInput}
+                    placeholder="#2980b9"
+                    placeholderTextColor={colors.placeholder}
+                    value={editHexInput}
+                    onChangeText={handleEditHexChange}
+                    maxLength={7}
+                    autoCapitalize="none"
+                  />
+                </View>
+                {!!editErrors.color && (
+                  <Text style={styles.errorText}>
+                    {editErrors.color.message}
+                  </Text>
+                )}
 
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={() => setEditModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonSave]}
-                  onPress={handleEditSubmit(onUpdateTag)}
-                >
-                  <Text style={styles.modalButtonTextSave}>Salvar</Text>
-                </TouchableOpacity>
-              </View>
+                {pickerTarget === "edit" && (
+                  <ColorGradientPicker
+                    color={editColor}
+                    onSelect={handleEditColorSelect}
+                  />
+                )}
+
+                {/* Preview em tempo real */}
+                {renderTagPreview(editName, editColor)}
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => {
+                      setPickerTarget(null);
+                      setEditModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.modalButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonSave]}
+                    onPress={handleEditSubmit(onUpdateTag)}
+                  >
+                    <Text style={styles.modalButtonTextSave}>Salvar</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
           </View>
         </Modal>

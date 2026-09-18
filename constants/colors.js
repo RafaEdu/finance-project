@@ -40,25 +40,20 @@ export const colors = {
   black: "#000",
 };
 
+// 14 cores bem distintas entre si (2 fileiras de 7).
 export const TAG_COLORS = [
-  "#2980b9",
-  "#e74c3c",
-  "#27ae60",
-  "#f39c12",
-  "#8e44ad",
-  "#1abc9c",
-  "#e67e22",
-  "#2c3e50",
-  "#d35400",
-  "#16a085",
-  "#c0392b",
-  "#2ecc71",
-  "#3498db",
-  "#9b59b6",
-  "#34495e",
-  "#f1c40f",
-  "#e91e63",
-  "#00bcd4",
-  "#ff5722",
-  "#607d8b",
+  "#e53935", // vermelho
+  "#f4511e", // laranja avermelhado
+  "#fb8c00", // laranja
+  "#fdd835", // amarelo
+  "#c0ca33", // verde-limão
+  "#7cb342", // verde claro
+  "#43a047", // verde
+  "#00897b", // verde-água
+  "#00acc1", // ciano
+  "#1e88e5", // azul
+  "#3949ab", // índigo
+  "#8e24aa", // roxo
+  "#d81b60", // rosa
+  "#6d4c41", // marrom
 ];

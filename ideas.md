@@ -17,7 +17,7 @@
 - [ ] Adicionar olho para esconder valores a serem mostrados na tela 'Visão Geral' - verificar se é preciso fazer o mesmo em outras telas;
 - [ ] Adicionar messageicon para esconder a descição das movimentações na tela "Visão Geral";
 - [ ] Ajustar o bottom menu bar, colocar apenas o ícone e mostrar o nome apenas quando está no tela selecionada;
-- [ ] Escolher a cor da tag através de um color gradient;
+- [x] Escolher a cor da tag através de um color gradient;
 
 ### Ajustes a serem feitos:
 

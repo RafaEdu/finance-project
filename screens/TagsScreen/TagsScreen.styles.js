@@ -80,6 +80,10 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  hexPreviewDotActive: {
+    borderWidth: 3,
+    borderColor: colors.accent,
+  },
   hexInput: {
     flex: 1,
     backgroundColor: colors.surfaceMuted,
