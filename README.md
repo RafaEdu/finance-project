@@ -46,7 +46,7 @@ Quer rodar esse projeto na sua máquina? Bora lá! Siga os passos abaixo:
 1.  **Clone o repositório:**
 
     ```bash
-    git clone [https://github.com/seu-usuario/finance-project.git](https://github.com/seu-usuario/finance-project.git)
+    git clone https://github.com/RafaEdu/finance-project.git
     cd finance-project
     ```
 

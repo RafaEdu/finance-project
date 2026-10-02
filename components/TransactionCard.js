@@ -95,6 +95,8 @@ export default function TransactionCard({
           <View style={styles.actions}>
             <TouchableOpacity
               onPress={() => onEdit && onEdit(transaction)}
+              accessibilityRole="button"
+              accessibilityLabel={`Editar ${transaction.name || "movimentação"}`}
               style={styles.actionButton}
               activeOpacity={0.6}
               hitSlop={HIT_SLOP}
@@ -103,6 +105,8 @@ export default function TransactionCard({
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => onDelete && onDelete(transaction)}
+              accessibilityRole="button"
+              accessibilityLabel={`Excluir ${transaction.name || "movimentação"}`}
               style={styles.actionButton}
               activeOpacity={0.6}
               hitSlop={HIT_SLOP}

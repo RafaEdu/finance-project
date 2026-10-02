@@ -24,6 +24,7 @@ import { colors } from "../constants/colors";
 import { TRANSACTION_CONFIG } from "../constants/transactions";
 import { parseCurrency, formatAmountInput } from "../utils/currency";
 import { formatDateBR } from "../utils/date";
+import { buildInstallments, hasValidInstallments } from "../utils/installments";
 import { normalizeDescription } from "../utils/string";
 import { generateUUID } from "../utils/uuid";
 import { createTransactionSchema } from "../utils/validators";
@@ -128,35 +129,22 @@ export default function TransactionForm({ type, navigation, route }) {
     }, [transactionToEdit, reset]),
   );
 
-  const generateItems = () => {
-    const numericBaseValue = parseCurrency(baseValue);
-    const newList = [];
-
-    for (let i = 0; i < count; i++) {
-      const itemDate = new Date(date);
-      itemDate.setMonth(itemDate.getMonth() + i);
-
-      const existingItem = items[i];
-      const valueToUse =
-        areValuesDifferent && existingItem
-          ? existingItem.value
-          : numericBaseValue;
-
-      newList.push({
-        id: i + 1,
-        value: valueToUse,
-        displayValue: formatAmountInput(valueToUse),
-        date: itemDate,
-      });
-    }
-    setItems(newList);
-  };
-
   useEffect(() => {
     if (mode === "recurring") {
-      generateItems();
+      setItems((previous) =>
+        buildInstallments({
+          date,
+          count,
+          baseValue: parseCurrency(baseValue),
+          different: areValuesDifferent,
+          previous,
+        }).map((item) => ({
+          ...item,
+          displayValue: formatAmountInput(item.value),
+        })),
+      );
     }
-  }, [count, baseValue, date, mode]);
+  }, [count, baseValue, date, mode, areValuesDifferent]);
 
   // --- HANDLERS DE INPUT ---
 
@@ -208,6 +196,13 @@ export default function TransactionForm({ type, navigation, route }) {
         });
         error = insertError;
       } else {
+        if (!hasValidInstallments(items, count)) {
+          Alert.alert(
+            "Verifique os valores",
+            "Informe um valor maior que zero em cada parcela ou recebimento.",
+          );
+          return;
+        }
         const groupId = generateUUID();
         const rowsToInsert = items.map((item) => ({
           userId: user.id,
@@ -476,6 +471,7 @@ export default function TransactionForm({ type, navigation, route }) {
           visible={showCountPicker}
           transparent={true}
           animationType="slide"
+          onRequestClose={() => setShowCountPicker(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
