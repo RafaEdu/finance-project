@@ -20,6 +20,7 @@ import { useTransactions } from "../../hooks/useTransactions";
 import { getSums } from "../../services/transactionsService";
 import LoadingView from "../../components/LoadingView";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
 import PeriodFilter from "../../components/PeriodFilter";
 import DateNavigator from "../../components/DateNavigator";
 import TransactionCard from "../../components/TransactionCard";
@@ -29,7 +30,12 @@ export default function InsightsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
 
   // Tags
-  const { tags, refresh: refreshTags } = useTags();
+  const {
+    tags,
+    loading: tagsLoading,
+    error: tagsError,
+    refresh: refreshTags,
+  } = useTags();
   const [selectedTagId, setSelectedTagId] = useState(null);
 
   // Period filter
@@ -47,12 +53,12 @@ export default function InsightsScreen() {
     transactions,
     loading,
     refreshing,
+    error,
     refresh: refreshTransactions,
   } = useTransactions({
     startISO,
     endISO,
     tagId: selectedTagId,
-    enabled: !!selectedTagId,
   });
 
   const periodIncome = useMemo(
@@ -79,16 +85,17 @@ export default function InsightsScreen() {
   useEffect(() => {
     if (
       selectedTagId &&
-      tags.length > 0 &&
+      !tagsLoading &&
+      !tagsError &&
       !tags.find((t) => t.id === selectedTagId)
     ) {
       setSelectedTagId(null);
     }
-  }, [tags, selectedTagId]);
+  }, [tags, tagsLoading, tagsError, selectedTagId]);
 
   // All-time totals for the selected tag
   useEffect(() => {
-    if (!selectedTagId || !user?.id) {
+    if (!user?.id) {
       setAllTimeIncome(0);
       setAllTimeExpense(0);
       setAllTimeBalance(0);
@@ -155,7 +162,7 @@ export default function InsightsScreen() {
 
           {tags.length === 0 ? (
             <Text style={styles.noTagsText}>
-              Nenhuma tag cadastrada. Crie tags para usar os Insights.
+              Todas as movimentações. Crie tags para filtrar por assunto.
             </Text>
           ) : (
             <ScrollView
@@ -197,31 +204,27 @@ export default function InsightsScreen() {
           )}
         </View>
 
-        {/* Period Filter (only when tag selected) */}
-        {selectedTagId && (
-          <>
-            <PeriodFilter value={filterType} onChange={setFilterType} />
+        {/* O período também se aplica à opção Todas. */}
+        <PeriodFilter value={filterType} onChange={setFilterType} />
 
-            <DateNavigator
-              date={currentDate}
-              type={filterType}
-              onChange={setCurrentDate}
-              onPressDate={() => setShowDatePicker(true)}
-            />
+        <DateNavigator
+          date={currentDate}
+          type={filterType}
+          onChange={setCurrentDate}
+          onPressDate={() => setShowDatePicker(true)}
+        />
 
-            {showDatePicker && (
-              <DateTimePicker
-                value={currentDate}
-                mode="date"
-                display="default"
-                onChange={handleDatePickerChange}
-              />
-            )}
-          </>
+        {showDatePicker && (
+          <DateTimePicker
+            value={currentDate}
+            mode="date"
+            display="default"
+            onChange={handleDatePickerChange}
+          />
         )}
 
-        {/* Summary Section (only when tag selected) */}
-        {selectedTagId && !loading && (
+        {/* Resumo do período selecionado */}
+        {!loading && !error && (
           <>
             <View style={styles.summaryContainer}>
               <View style={[styles.summaryCard, styles.incomeCard]}>
@@ -297,13 +300,13 @@ export default function InsightsScreen() {
           </>
         )}
 
-        {/* Transaction History (only when tag selected) */}
-        {selectedTagId && !loading && (
+        {/* Histórico do período selecionado */}
+        {!loading && !error && (
           <>
             <Text style={styles.sectionTitle}>Histórico de Movimentações</Text>
 
             {transactions.length === 0 ? (
-              <EmptyState text="Nenhuma movimentação encontrada para esta tag no período." />
+              <EmptyState text="Nenhuma movimentação encontrada para este filtro no período." />
             ) : (
               <View>
                 {transactions.map((item) => (
@@ -318,17 +321,8 @@ export default function InsightsScreen() {
           </>
         )}
 
-        {/* No Tag Selected State */}
-        {!selectedTagId && tags.length > 0 && (
-          <EmptyState
-            icon="analytics-outline"
-            text="Selecione uma tag acima para ver os insights."
-            style={styles.noTagSelectedContainer}
-          />
-        )}
-
-        {/* Loading indicator when fetching data for a selected tag */}
-        {selectedTagId && loading && !refreshing && <LoadingView />}
+        {error && <ErrorState onRetry={onRefresh} />}
+        {loading && !refreshing && <LoadingView />}
       </ScrollView>
     </View>
   );

@@ -27,6 +27,7 @@ import { deleteTransaction, getSums } from "../../services/transactionsService";
 import { confirmDestructive } from "../../components/ConfirmDialog";
 import LoadingView from "../../components/LoadingView";
 import EmptyState from "../../components/EmptyState";
+import ErrorState from "../../components/ErrorState";
 import PeriodFilter from "../../components/PeriodFilter";
 import DateNavigator from "../../components/DateNavigator";
 import TransactionCard from "../../components/TransactionCard";
@@ -55,6 +56,7 @@ export default function DashboardScreen({ navigation }) {
     transactions,
     loading,
     refreshing,
+    error,
     refresh: refreshTransactions,
   } = useTransactions({ startISO, endISO });
 
@@ -182,6 +184,8 @@ export default function DashboardScreen({ navigation }) {
   if (loading && !refreshing && transactions.length === 0) {
     return <LoadingView fullScreen />;
   }
+
+  if (error) return <ErrorState onRetry={onRefresh} />;
 
   return (
     // Implementação do KeyboardAvoidingView com OFFSET para corrigir o problema da barra escondida

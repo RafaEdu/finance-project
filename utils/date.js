@@ -9,8 +9,7 @@ export function getDateRange(date, type) {
   } else if (type === "month") {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
-    end.setMonth(end.getMonth() + 1);
-    end.setDate(0);
+    end.setMonth(end.getMonth() + 1, 0);
     end.setHours(23, 59, 59, 999);
   } else if (type === "year") {
     start.setMonth(0, 1);
@@ -48,11 +47,26 @@ export function formatDateBR(date) {
 }
 
 // Navega a data para frente/trás conforme o tipo de filtro.
+// Preserva o dia quando possível; meses curtos usam seu último dia válido.
+export function addMonthsClamped(date, months) {
+  const result = new Date(date);
+  const day = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0,
+  ).getDate();
+  result.setDate(Math.min(day, lastDay));
+  return result;
+}
+
 export function changeDate(date, type, direction) {
   const newDate = new Date(date);
   if (type === "day") newDate.setDate(newDate.getDate() + direction);
-  else if (type === "month") newDate.setMonth(newDate.getMonth() + direction);
+  else if (type === "month") return addMonthsClamped(date, direction);
   else if (type === "year")
-    newDate.setFullYear(newDate.getFullYear() + direction);
+    return addMonthsClamped(date, direction * 12);
   return newDate;
 }

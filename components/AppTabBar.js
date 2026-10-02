@@ -11,8 +11,8 @@ export const TAB_BAR_BOTTOM_OFFSET = 10;
 
 const TABS = {
   [ROUTES.dashboard]: {
-    icon: "search-outline",
-    activeIcon: "search",
+    icon: "home-outline",
+    activeIcon: "home",
     label: "Visão Geral",
   },
   [ROUTES.newIncome]: {
@@ -83,7 +83,8 @@ export default function AppTabBar({ state, descriptors, navigation }) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
             accessibilityLabel={
-              descriptors[route.key]?.options?.tabBarAccessibilityLabel
+              descriptors[route.key]?.options?.tabBarAccessibilityLabel ||
+              config.label
             }
             onPress={onPress}
             onLongPress={onLongPress}
