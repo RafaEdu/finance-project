@@ -1,41 +1,37 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import { getTags } from "../services/tagsService";
-
-// Carrega as tags do usuário e expõe um `refresh` para recarregar após mutações.
+import { createRequestGuard } from "../utils/finance";
 export function useTags({ orderBy = "name", ascending = true } = {}) {
   const { user } = useAuth();
-  const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
+  const guard = useRef(createRequestGuard());
+  const [state, setState] = useState({ tags: [], loading: true, error: null });
   const refresh = useCallback(async () => {
+    const request = guard.current.next();
     if (!user?.id) {
-      setTags([]);
-      setLoading(false);
-      return { data: [], error: null };
+      setState({ tags: [], loading: false, error: null });
+      return;
     }
-
-    setLoading(true);
-    const result = await getTags(user.id, { orderBy, ascending });
-
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setError(null);
-      setTags(result.data);
+    setState((old) => ({ ...old, loading: true, error: null }));
+    try {
+      const result = await getTags(user.id, { orderBy, ascending });
+      if (result.error) throw result.error;
+      if (guard.current.isCurrent(request))
+        setState({ tags: result.data, loading: false, error: null });
+      return result;
+    } catch (error) {
+      if (guard.current.isCurrent(request))
+        setState((old) => ({ ...old, loading: false, error }));
+      return { data: [], error };
     }
-
-    setLoading(false);
-    return result;
   }, [user?.id, orderBy, ascending]);
-
   useFocusEffect(
     useCallback(() => {
       refresh();
+      const activeGuard = guard.current;
+      return () => activeGuard.invalidate();
     }, [refresh]),
   );
-
-  return { tags, loading, error, refresh };
+  return { ...state, refresh };
 }

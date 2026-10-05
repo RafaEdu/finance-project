@@ -1,217 +1,84 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../constants/colors";
-import { formatCurrency } from "../utils/currency";
+import { getStatusLabel } from "../utils/finance";
 import { formatTransactionDate } from "../utils/date";
-
-// Card de movimentação (receita/despesa) reutilizado no Dashboard e Insights.
-export default function TransactionCard({
-  transaction,
-  tag,
-  onEdit,
-  onDelete,
-  showActions = false,
-}) {
-  if (!transaction) return null;
-
-  const isIncome = transaction.type === "income";
-  const hasMultipleOccurrences =
-    transaction.installmentTotal && transaction.installmentTotal > 1;
-  const isRecurrence = isIncome && hasMultipleOccurrences;
-  const isInstallment = !isIncome && hasMultipleOccurrences;
-
+import MoneyText from "./MoneyText";
+export default function TransactionCard({ transaction, tag, onPress }) {
+  const income = transaction.type === "income";
+  const series =
+    transaction.installmentTotal > 1
+      ? ` · ${transaction.entryKind === "installment" ? "Parcela" : "Ocorrência"} ${transaction.installmentCurrent}/${transaction.installmentTotal}`
+      : "";
   return (
-    <View style={styles.card}>
-      <View style={styles.iconWrapper}>
+    <TouchableOpacity
+      disabled={!onPress}
+      onPress={() => onPress?.(transaction)}
+      accessibilityRole={onPress ? "button" : undefined}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 16,
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        marginBottom: 8,
+        minHeight: 80,
+      }}
+    >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: income ? colors.incomeSoft : colors.surfaceMuted,
+        }}
+      >
         <Ionicons
-          name={isIncome ? "arrow-up-circle" : "arrow-down-circle"}
-          size={24}
-          color={isIncome ? colors.income : colors.expense}
+          name={income ? "arrow-down-outline" : "arrow-up-outline"}
+          size={19}
+          color={income ? colors.income : colors.textSecondary}
         />
       </View>
-
-      <View style={styles.info}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{transaction.name || "Sem nome"}</Text>
-
-          {isRecurrence && (
-            <View style={styles.recurrenceBadge}>
-              <Text style={styles.recurrenceText}>
-                Receita {transaction.installmentCurrent}/
-                {transaction.installmentTotal}
-              </Text>
-            </View>
-          )}
-
-          {isInstallment && (
-            <View style={styles.installmentBadge}>
-              <Text style={styles.installmentText}>
-                Parcela {transaction.installmentCurrent}/
-                {transaction.installmentTotal}
-              </Text>
-            </View>
-          )}
-
-          {tag && (
-            <View
-              style={[
-                styles.tagBadge,
-                { backgroundColor: tag.color || colors.accent },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.tagBadgeText,
-                  { color: tag.textColor || colors.white },
-                ]}
-              >
-                {tag.name}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.date}>
-          {formatTransactionDate(transaction.date)}
-        </Text>
-
-        {!!transaction.description && (
-          <Text style={styles.description}>{transaction.description}</Text>
-        )}
-      </View>
-
-      <View style={styles.right}>
+      <View style={{ flex: 1, minWidth: 0, gap: 5 }}>
         <Text
-          style={[
-            styles.value,
-            { color: isIncome ? colors.income : colors.expense },
-          ]}
+          style={{
+            color: colors.text,
+            fontSize: 16,
+            fontWeight: "600",
+            flexShrink: 1,
+          }}
         >
-          {isIncome ? "+" : "-"} {formatCurrency(transaction.amount)}
+          {transaction.name}
         </Text>
-
-        {showActions && (
-          <View style={styles.actions}>
-            <TouchableOpacity
-              onPress={() => onEdit && onEdit(transaction)}
-              accessibilityRole="button"
-              accessibilityLabel={`Editar ${transaction.name || "movimentação"}`}
-              style={styles.actionButton}
-              activeOpacity={0.6}
-              hitSlop={HIT_SLOP}
-            >
-              <Ionicons name="pencil" size={20} color={colors.warning} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => onDelete && onDelete(transaction)}
-              accessibilityRole="button"
-              accessibilityLabel={`Excluir ${transaction.name || "movimentação"}`}
-              style={styles.actionButton}
-              activeOpacity={0.6}
-              hitSlop={HIT_SLOP}
-            >
-              <Ionicons name="trash" size={20} color={colors.expense} />
-            </TouchableOpacity>
-          </View>
-        )}
+        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+          {tag?.name || "Sem tag"} · {formatTransactionDate(transaction.date)}
+          {series}
+        </Text>
+        <Text
+          style={{
+            color: transaction.settled ? colors.textSecondary : colors.warning,
+            fontSize: 12,
+          }}
+        >
+          {getStatusLabel(transaction)}
+        </Text>
+        <MoneyText
+          value={transaction.amount}
+          prefix={income ? "+ " : "− "}
+          style={{
+            fontSize: 17,
+            fontWeight: "600",
+            color: income ? colors.income : colors.text,
+          }}
+        />
       </View>
-    </View>
+      {onPress && (
+        <Ionicons name="chevron-forward" size={18} color={colors.textSubtle} />
+      )}
+    </TouchableOpacity>
   );
 }
-
-const HIT_SLOP = { top: 10, bottom: 10, left: 10, right: 10 };
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: "row",
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-    alignItems: "center",
-    elevation: 1,
-    shadowColor: colors.black,
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  iconWrapper: {
-    marginRight: 15,
-    justifyContent: "center",
-  },
-  info: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.textStrong,
-    marginRight: 8,
-  },
-  installmentBadge: {
-    backgroundColor: colors.expense,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-  },
-  installmentText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  recurrenceBadge: {
-    backgroundColor: colors.income,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-  },
-  recurrenceText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  tagBadge: {
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    alignSelf: "flex-start",
-  },
-  tagBadgeText: {
-    fontSize: 10,
-    fontWeight: "bold",
-  },
-  date: {
-    fontSize: 12,
-    color: colors.textSubtle,
-  },
-  description: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  right: {
-    alignItems: "flex-end",
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  actionButton: {
-    marginLeft: 10,
-    padding: 5,
-  },
-});

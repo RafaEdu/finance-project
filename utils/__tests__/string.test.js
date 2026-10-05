@@ -1,4 +1,8 @@
-import { normalizeDescription, removeAccents, normalizeForSearch } from "../string";
+import {
+  normalizeDescription,
+  removeAccents,
+  normalizeForSearch,
+} from "../string";
 
 describe("normalizeDescription", () => {
   it("retorna null para vazio ou apenas espaços", () => {

@@ -12,6 +12,8 @@ module.exports = [
       "dist/",
       "web-build/",
       "coverage/",
+      "test-results/",
+      "playwright-report/",
       "assets/",
     ],
   },

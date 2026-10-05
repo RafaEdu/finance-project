@@ -1,89 +1,82 @@
-import React from "react";
-import { View, Text, Alert } from "react-native";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { verifyOtp, updateUser } from "../../services/authService";
-import { styles } from "./VerifyCodeScreen.styles";
-import { ROUTES } from "../../constants/routes";
-import { verifyCodeSchema } from "../../utils/validators";
-import ControlledFormField from "../../components/ControlledFormField";
+import React, { useState } from "react";
+import { Text } from "react-native";
+import { verifyOtp, sendPasswordReset } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
+import { colors } from "../../constants/colors";
+import Screen from "../../components/Screen";
+import ScreenHeader from "../../components/ScreenHeader";
+import FormField from "../../components/FormField";
 import AppButton from "../../components/AppButton";
-
 export default function VerifyCodeScreen({ route, navigation }) {
-  const { email, type, newPassword } = route.params || {};
-
-  const {
-    control,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm({
-    resolver: zodResolver(verifyCodeSchema),
-    defaultValues: { code: "" },
-  });
-
-  const onSubmit = async ({ code }) => {
+  const { email, type } = route.params || {};
+  const { verifyRecovery } = useAuth();
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const verify = async () => {
+    if (!/^\d{6}$/.test(code)) {
+      setError("Digite os 6 dígitos do código.");
+      return;
+    }
+    setBusy(true);
+    setError("");
     try {
-      // 1. Verificar o código OTP
-      // Se type="signup", o sucesso aqui cria a sessão, e o App.js automaticamente
-      // troca para a pilha Autenticada (MainTabs), saindo desta tela.
-      const { error } = await verifyOtp({
-        email,
-        token: code,
-        type,
-      });
-
-      if (error) throw error;
-
-      // 2. Se for fluxo de 'recovery' com nova senha (vindo do Perfil logado)
-      if (type === "recovery" && newPassword) {
-        const { error: updateError } = await updateUser({
-          password: newPassword,
-        });
-        if (updateError) throw updateError;
-
-        Alert.alert("Sucesso", "Senha atualizada com sucesso!");
-        navigation.navigate(ROUTES.mainTabs);
-      }
-      // 3. Se for 'signup', o App.js cuidará do redirecionamento automático
-      else if (type === "signup") {
-        Alert.alert("Sucesso", "Conta verificada! Bem-vindo.");
-      }
-      // 4. Se for 'recovery' do ForgotPassword (sem senha ainda)
-      else if (type === "recovery" && !newPassword) {
-        Alert.alert(
-          "Sucesso",
-          "Você foi logado! Vá ao seu perfil para redefinir sua senha.",
-        );
-      }
-    } catch (error) {
-      Alert.alert("Erro na verificação", error.message);
+      const result =
+        type === "recovery"
+          ? await verifyRecovery(email, code)
+          : await verifyOtp({ email, token: code, type });
+      if (result.error) throw result.error;
+    } catch {
+      setError(
+        "Código inválido ou expirado. Confira o e-mail e tente novamente.",
+      );
+    } finally {
+      setBusy(false);
     }
   };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Verificação</Text>
-      <Text style={styles.subtitle}>
-        Digite o código de 6 dígitos enviado para: {email}
-      </Text>
-
-      <ControlledFormField
-        control={control}
-        name="code"
-        inputStyle={styles.input}
-        placeholder="123456"
-        keyboardType="number-pad"
-        maxLength={6}
-        autoFocus
+    <Screen>
+      <ScreenHeader
+        title="Confira seu e-mail"
+        subtitle={`Digite o código enviado para ${email || "seu e-mail"}.`}
+        onBack={() => navigation.goBack()}
       />
-
-      <View style={styles.buttonContainer}>
+      <FormField
+        label="Código de verificação"
+        value={code}
+        onChangeText={(text) => setCode(text.replace(/\D/g, ""))}
+        maxLength={6}
+        keyboardType="number-pad"
+        autoComplete="one-time-code"
+      />
+      {!!error && (
+        <Text accessibilityRole="alert" style={{ color: colors.expense }}>
+          {error}
+        </Text>
+      )}
+      <AppButton title="Confirmar código" loading={busy} onPress={verify} />
+      {type === "recovery" && (
         <AppButton
-          title={isSubmitting ? "Verificando..." : "Confirmar Código"}
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
+          title="Reenviar código"
+          variant="neutral"
+          disabled={busy}
+          onPress={async () => {
+            setBusy(true);
+            try {
+              const result = await sendPasswordReset(email);
+              setError(
+                result.error
+                  ? "Não foi possível reenviar. Aguarde e tente novamente."
+                  : "Um novo código foi solicitado. Confira seu e-mail.",
+              );
+            } catch {
+              setError("Não foi possível reenviar. Tente novamente.");
+            } finally {
+              setBusy(false);
+            }
+          }}
         />
-      </View>
-    </View>
+      )}
+    </Screen>
   );
 }

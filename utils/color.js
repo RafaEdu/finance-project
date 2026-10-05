@@ -13,7 +13,7 @@ export function getContrastTextColor(hexColor) {
   const luminance =
     0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 
-  return luminance > 0.4 ? "#000000" : "#ffffff";
+  return luminance > 0.179 ? "#000000" : "#ffffff";
 }
 
 // Valida um código de cor no formato #RRGGBB.

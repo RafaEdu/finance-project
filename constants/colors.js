@@ -1,59 +1,49 @@
 export const colors = {
-  // Marca e acentos
-  primary: "#0000ff",
-  income: "#27ae60",
-  expense: "#e74c3c",
-  accent: "#2980b9",
-  warning: "#f39c12",
-  positive: "#2ecc71",
-
-  // Superfícies
-  background: "#f5f6fa",
-  backgroundAlt: "#f5f5f5",
-  surface: "#fff",
-  surfaceMuted: "#fafafa",
-  surfaceSubtle: "#f9f9f9",
-  darkSurface: "#34495e",
-  segmentBackground: "#e0e0e0",
-
-  // Texto
-  text: "#333",
-  textStrong: "#2c3e50",
-  textMedium: "#555",
-  textSecondary: "#666",
-  textMuted: "#7f8c8d",
-  textSubtle: "#95a5a6",
-  textLight: "#bdc3c7",
-  placeholder: "#999",
-
-  // Linhas e bordas
-  border: "#ddd",
-  borderLight: "#eee",
-  borderStrong: "#ccc",
-
-  // Estados de switch
-  switchTrackOff: "#767577",
-  switchThumbOff: "#f4f3f4",
-
-  // Neutros
-  white: "#fff",
-  black: "#000",
+  primary: "#4F46E5",
+  primarySoft: "#EEECFF",
+  income: "#15803D",
+  incomeSoft: "#E9F6EE",
+  expense: "#B91C1C",
+  expenseSoft: "#FDECEC",
+  accent: "#4F46E5",
+  warning: "#92400E",
+  positive: "#15803D",
+  background: "#F6F7FB",
+  backgroundAlt: "#F6F7FB",
+  surface: "#FFFFFF",
+  surfaceMuted: "#F8FAFC",
+  surfaceSubtle: "#F8FAFC",
+  darkSurface: "#0F172A",
+  segmentBackground: "#E8EBF2",
+  text: "#0F172A",
+  textStrong: "#0F172A",
+  textMedium: "#334155",
+  textSecondary: "#475569",
+  textMuted: "#475569",
+  textSubtle: "#64748B",
+  textLight: "#CBD5E1",
+  placeholder: "#64748B",
+  border: "#CBD5E1",
+  borderLight: "#E2E8F0",
+  borderStrong: "#94A3B8",
+  switchTrackOff: "#CBD5E1",
+  switchThumbOff: "#FFFFFF",
+  white: "#FFFFFF",
+  black: "#000000",
 };
-
-// 14 cores bem distintas entre si (2 fileiras de 7).
 export const TAG_COLORS = [
-  "#e53935", // vermelho
-  "#f4511e", // laranja avermelhado
-  "#fb8c00", // laranja
-  "#fdd835", // amarelo
-  "#c0ca33", // verde-limão
-  "#7cb342", // verde claro
-  "#43a047", // verde
-  "#00897b", // verde-água
-  "#00acc1", // ciano
-  "#1e88e5", // azul
-  "#3949ab", // índigo
-  "#8e24aa", // roxo
-  "#d81b60", // rosa
-  "#6d4c41", // marrom
+  "#B91C1C",
+  "#C2410C",
+  "#B45309",
+  "#A16207",
+  "#4D7C0F",
+  "#15803D",
+  "#047857",
+  "#0F766E",
+  "#0E7490",
+  "#1D4ED8",
+  "#4F46E5",
+  "#7E22CE",
+  "#BE185D",
+  "#57534E",
 ];

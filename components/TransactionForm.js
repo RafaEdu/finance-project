@@ -1,515 +1,433 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Alert,
-  TouchableOpacity,
-  Platform,
-  Switch,
-  ScrollView,
-  FlatList,
-  Modal,
-  KeyboardAvoidingView,
-} from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { CommonActions, usePreventRemove } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
-import { ROUTES } from "../constants/routes";
-import { colors } from "../constants/colors";
-import { TRANSACTION_CONFIG } from "../constants/transactions";
-import { parseCurrency, formatAmountInput } from "../utils/currency";
-import { formatDateBR } from "../utils/date";
-import { buildInstallments, hasValidInstallments } from "../utils/installments";
-import { normalizeDescription } from "../utils/string";
-import { generateUUID } from "../utils/uuid";
-import { createTransactionSchema } from "../utils/validators";
 import { useTags } from "../hooks/useTags";
 import {
-  createTransaction,
   createTransactions,
   updateTransaction,
 } from "../services/transactionsService";
-import { styles } from "./TransactionForm.styles";
+import { generateUUID } from "../utils/uuid";
+import {
+  parseCurrency,
+  formatAmountInput,
+  formatCurrency,
+} from "../utils/currency";
+import { addMonthsClamped, formatDateBR } from "../utils/date";
+import { splitAmount } from "../utils/finance";
+import { normalizeDescription } from "../utils/string";
+import { ui } from "../constants/theme";
+import { colors } from "../constants/colors";
+import { ROUTES } from "../constants/routes";
+import Screen from "./Screen";
+import ScreenHeader from "./ScreenHeader";
+import FormField from "./FormField";
 import AppButton from "./AppButton";
-import ControlledFormField from "./ControlledFormField";
-import Toast from "./Toast";
-import TagSelector from "./TagSelector";
+import ChoiceGroup from "./ChoiceGroup";
+import DateField from "./DateField";
 import TagPickerModal from "./TagPickerModal";
+import { confirmDestructive } from "./ConfirmDialog";
 
-const COUNT_OPTIONS = Array.from({ length: 47 }, (_, i) => i + 2);
-
-// Formulário compartilhado de receita/despesa. As diferenças ficam em
-// constants/transactions.js; aqui reside a lógica única dos dois cadastros.
-export default function TransactionForm({ type, navigation, route }) {
-  const config = TRANSACTION_CONFIG[type];
+export default function TransactionForm({ navigation, route }) {
+  const edit = route.params?.transactionToEdit;
   const { user } = useAuth();
-  const tabBarHeight = useBottomTabBarHeight();
-
-  // Modos: 'single' (único) ou 'recurring' (recorrente/parcelado)
-  const [mode, setMode] = useState("single");
-
-  // Datas e parcelas
-  const [date, setDate] = useState(new Date());
-  const [count, setCount] = useState(2);
-  const [areValuesDifferent, setAreValuesDifferent] = useState(false);
-  const [items, setItems] = useState([]);
-
-  // Tags
-  const { tags } = useTags();
-  const [selectedTagId, setSelectedTagId] = useState(null);
-  const [showTagPicker, setShowTagPicker] = useState(false);
-
-  // Controles de UI
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showCountPicker, setShowCountPicker] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
-  const transactionToEdit = route.params?.transactionToEdit;
-
-  const schema = useMemo(
-    () =>
-      createTransactionSchema({
-        mode,
-        areValuesDifferent,
-        invalidValueMessage: config.invalidValueMessage,
-        invalidRecurringValueMessage: config.invalidRecurringValueMessage,
-      }),
-    [mode, areValuesDifferent, config],
+  const { tags, error: tagsError, refresh: refreshTags } = useTags();
+  const [type, setType] = useState(edit?.type || "expense");
+  const [name, setName] = useState(edit?.name || "");
+  const [description, setDescription] = useState(edit?.description || "");
+  const [value, setValue] = useState(
+    edit ? formatAmountInput(edit.amount) : "",
   );
-
-  const {
-    control,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { isSubmitting },
-  } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      name: "",
-      description: "",
-      singleValue: "",
-      baseValue: "",
-    },
-    mode: "onTouched",
+  const [date, setDate] = useState(edit ? new Date(edit.date) : new Date());
+  const [settled, setSettled] = useState(edit?.settled || false);
+  const [tagId, setTagId] = useState(edit?.tagId || null);
+  const [tagOpen, setTagOpen] = useState(false);
+  const [details, setDetails] = useState(!!edit?.description);
+  const [kind, setKind] = useState("single");
+  const [count, setCount] = useState("2");
+  const [amountMode, setAmountMode] = useState("each");
+  const [different, setDifferent] = useState(false);
+  const [custom, setCustom] = useState({});
+  const [previewAll, setPreviewAll] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [exitAction, setExitAction] = useState(null);
+  const saving = useRef(false);
+  const attempt = useRef(null);
+  const [initialDate] = useState(() => date.getTime());
+  const dirty =
+    date.getTime() !== initialDate ||
+    type !== (edit?.type || "expense") ||
+    count !== "2" ||
+    different ||
+    amountMode !== "each" ||
+    name !== (edit?.name || "") ||
+    value !== (edit ? formatAmountInput(edit.amount) : "") ||
+    description !== (edit?.description || "") ||
+    tagId !== (edit?.tagId || null) ||
+    kind !== "single" ||
+    settled !== (edit?.settled || false);
+  usePreventRemove((dirty || locked) && !exitAction, ({ data }) => {
+    if (saving.current) return;
+    confirmDestructive({
+      title: "Sair do lançamento?",
+      message: locked
+        ? "O envio não foi confirmado. Confira as movimentações antes de cadastrar novamente."
+        : "O preenchimento ainda não foi salvo.",
+      confirmText: "Sair",
+      onConfirm: () => setExitAction(data.action),
+    });
   });
-
-  const baseValue = watch("baseValue");
-
-  // --- EFEITOS E INICIALIZAÇÃO ---
-
-  useFocusEffect(
-    useCallback(() => {
-      if (transactionToEdit) {
-        setMode("single");
-        reset({
-          name: transactionToEdit.name || "",
-          description: transactionToEdit.description || "",
-          singleValue: formatAmountInput(transactionToEdit.amount),
-          baseValue: "",
-        });
-        setDate(new Date(transactionToEdit.date));
-        setSelectedTagId(transactionToEdit.tagId || null);
-      } else {
-        setMode("single");
-        reset({ name: "", description: "", singleValue: "", baseValue: "" });
-        setDate(new Date());
-        setCount(2);
-        setAreValuesDifferent(false);
-        setItems([]);
-        setSelectedTagId(null);
-        setShowToast(false);
-      }
-    }, [transactionToEdit, reset]),
-  );
-
   useEffect(() => {
-    if (mode === "recurring") {
-      setItems((previous) =>
-        buildInstallments({
-          date,
-          count,
-          baseValue: parseCurrency(baseValue),
-          different: areValuesDifferent,
-          previous,
-        }).map((item) => ({
-          ...item,
-          displayValue: formatAmountInput(item.value),
-        })),
-      );
-    }
-  }, [count, baseValue, date, mode, areValuesDifferent]);
-
-  // --- HANDLERS DE INPUT ---
-
-  const handleIndividualValueChange = (text, index) => {
-    const val = parseCurrency(text);
-    const newList = [...items];
-    newList[index].value = val;
-    newList[index].displayValue = formatAmountInput(val);
-    setItems(newList);
-  };
-
-  const handleDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === "ios");
-    setDate(currentDate);
-  };
-
-  // --- SALVAR ---
-
-  const onSubmit = async ({ name, description, singleValue }) => {
+    if (exitAction) navigation.dispatch(exitAction);
+  }, [exitAction, navigation]);
+  const numericCount = kind === "single" ? 1 : Number(count);
+  const numericValue = parseCurrency(value);
+  const schedule = useMemo(() => {
+    if (
+      !Number.isInteger(numericCount) ||
+      numericCount < 1 ||
+      numericCount > 48
+    )
+      return [];
+    let amounts;
     try {
-      let error = null;
-
-      if (transactionToEdit) {
-        const { error: updateError } = await updateTransaction(
-          type,
-          transactionToEdit.id,
-          {
-            name: name.trim(),
-            description: normalizeDescription(description),
-            amount: parseCurrency(singleValue),
-            date: date.toISOString(),
-            tagId: selectedTagId,
-          },
-        );
-        error = updateError;
-      } else if (mode === "single") {
-        const { error: insertError } = await createTransaction(type, {
-          userId: user.id,
-          name: name.trim(),
-          description: normalizeDescription(description),
-          amount: parseCurrency(singleValue),
-          date: date.toISOString(),
-          settled: false,
-          installmentCurrent: 1,
-          installmentTotal: 1,
-          groupId: null,
-          tagId: selectedTagId,
-        });
-        error = insertError;
-      } else {
-        if (!hasValidInstallments(items, count)) {
-          Alert.alert(
-            "Verifique os valores",
-            "Informe um valor maior que zero em cada parcela ou recebimento.",
-          );
-          return;
-        }
-        const groupId = generateUUID();
-        const rowsToInsert = items.map((item) => ({
-          userId: user.id,
-          name: name.trim(),
-          description: normalizeDescription(description),
-          amount: item.value,
-          date: item.date.toISOString(),
-          settled: false,
-          installmentCurrent: item.id,
-          installmentTotal: count,
-          groupId,
-          tagId: selectedTagId,
-        }));
-
-        const { error: insertError } = await createTransactions(
-          type,
-          rowsToInsert,
-        );
-        error = insertError;
+      amounts =
+        kind === "installment" && amountMode === "total"
+          ? splitAmount(numericValue, numericCount)
+          : Array(numericCount).fill(numericValue);
+    } catch {
+      return [];
+    }
+    return amounts.map((amount, i) => ({
+      date: addMonthsClamped(date, i),
+      amount:
+        different && custom[i] !== undefined
+          ? parseCurrency(custom[i])
+          : amount,
+    }));
+  }, [date, numericCount, numericValue, different, custom, kind, amountMode]);
+  const total =
+    schedule.reduce((sum, item) => sum + Math.round(item.amount * 100), 0) /
+    100;
+  const save = async () => {
+    if (saving.current) return;
+    if (!attempt.current) {
+      if (!name.trim()) {
+        setError("Informe o nome do lançamento.");
+        return;
       }
-
-      if (error) {
-        Alert.alert("Erro ao salvar", error.message);
-      } else {
-        setToastMessage(
-          transactionToEdit ? config.updatedMessage : config.registeredMessage,
-        );
-        setShowToast(true);
-        setTimeout(() => {
-          navigation.setParams({ transactionToEdit: null });
-          navigation.navigate(ROUTES.dashboard);
-          setShowToast(false);
-        }, 1500);
+      if (
+        kind !== "single" &&
+        (numericCount < 2 ||
+          numericCount > 48 ||
+          !Number.isInteger(numericCount))
+      ) {
+        setError("Escolha de 2 a 48 ocorrências.");
+        return;
       }
-    } catch (e) {
-      Alert.alert("Erro Crítico", e.message);
+      if (
+        !schedule.length ||
+        schedule.some(
+          (item) =>
+            !Number.isFinite(item.amount) ||
+            item.amount <= 0 ||
+            item.amount > 999999999999.99,
+        )
+      ) {
+        setError("Informe valores maiores que zero em todas as ocorrências.");
+        return;
+      }
+      const groupId = kind === "single" ? null : generateUUID();
+      attempt.current = schedule.map((item, index) => ({
+        id: generateUUID(),
+        userId: user.id,
+        name: name.trim(),
+        description: normalizeDescription(description),
+        amount: item.amount,
+        date: item.date.toISOString(),
+        settled: index === 0 && settled,
+        tagId,
+        installmentCurrent: index + 1,
+        installmentTotal: numericCount,
+        groupId,
+        entryKind: kind,
+      }));
+    }
+    saving.current = true;
+    setBusy(true);
+    setLocked(true);
+    setError("");
+    try {
+      const row = attempt.current[0];
+      const result = edit
+        ? await updateTransaction(edit.type, edit.id, {
+            name: row.name,
+            description: row.description,
+            amount: row.amount,
+            date: row.date,
+            settled: row.settled,
+            tagId: row.tagId,
+          })
+        : await createTransactions(type, attempt.current);
+      if (result.error) throw result.error;
+      setExitAction(CommonActions.goBack());
+    } catch {
+      setError(
+        "Não foi possível confirmar o salvamento. Tente novamente com os mesmos dados para evitar duplicações.",
+      );
+      saving.current = false;
+      setBusy(false);
     }
   };
-
-  const renderItem = ({ item, index }) => (
-    <View style={styles.installmentRow}>
-      <Text style={styles.installmentLabel}>
-        {config.formatItemLabel(item.id, formatDateBR(item.date))}
-      </Text>
-      {areValuesDifferent ? (
-        <TextInput
-          style={styles.installmentInput}
-          value={item.displayValue}
-          onChangeText={(text) => handleIndividualValueChange(text, index)}
-          keyboardType="numeric"
-          placeholder="0,00"
-          placeholderTextColor={colors.placeholder}
-        />
-      ) : (
-        <Text style={styles.installmentValueFixed}>R$ {item.displayValue}</Text>
-      )}
-    </View>
-  );
-
-  const title = transactionToEdit
-    ? config.editTitle
-    : mode === "single"
-      ? config.newSingleTitle
-      : config.newRecurringTitle;
-
+  const setMoney = (text) => setValue(formatAmountInput(parseCurrency(text)));
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.flex1}
-    >
-      <View style={styles.container}>
-        {!transactionToEdit && (
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                mode === "single" && styles.tabButtonActive,
-              ]}
-              onPress={() => setMode("single")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  mode === "single" && styles.tabTextActive,
-                  mode === "single" && { color: config.color },
-                ]}
-              >
-                {config.singleTabLabel}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                mode === "recurring" && styles.tabButtonActive,
-              ]}
-              onPress={() => setMode("recurring")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  mode === "recurring" && styles.tabTextActive,
-                  mode === "recurring" && { color: config.color },
-                ]}
-              >
-                {config.recurringTabLabel}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <Text style={[styles.title, { color: config.color }]}>{title}</Text>
-
-        <ScrollView
-          contentContainerStyle={[
-            styles.listPadding,
-            { paddingBottom: tabBarHeight + 16 },
-          ]}
-        >
-          <ControlledFormField
-            control={control}
-            name="name"
-            label="Nome"
-            inputStyle={styles.input}
-            labelStyle={styles.label}
-            placeholder={config.namePlaceholder}
+    <Screen>
+      <ScreenHeader
+        title={edit ? "Editar lançamento" : "Novo lançamento"}
+        subtitle={
+          edit
+            ? "As mudanças valem só para esta ocorrência."
+            : "Registre hoje. Entenda seu mês."
+        }
+        onBack={() => navigation.goBack()}
+      />
+      {!edit && (
+        <View pointerEvents={locked ? "none" : "auto"}>
+          <ChoiceGroup
+            value={type}
+            onChange={(next) => {
+              setType(next);
+              setKind("single");
+            }}
+            options={[
+              { value: "expense", label: "Despesa" },
+              { value: "income", label: "Receita" },
+            ]}
           />
-
-          <ControlledFormField
-            control={control}
-            name="description"
-            label="Descrição"
-            inputStyle={styles.input}
-            labelStyle={styles.label}
-            placeholder="Detalhes adicionais..."
-          />
-
-          <TagSelector
-            tags={tags}
-            selectedTagId={selectedTagId}
-            onPress={() => setShowTagPicker(true)}
-            onClear={() => setSelectedTagId(null)}
-            onAdd={() => navigation.navigate(ROUTES.tags)}
-            accentColor={config.color}
-          />
-
-          {mode === "single" && (
-            <>
-              <ControlledFormField
-                control={control}
-                name="singleValue"
-                label={config.singleValueLabel}
-                inputStyle={styles.input}
-                labelStyle={styles.label}
-                placeholder="0,00"
-                keyboardType="numeric"
-                transformValue={(text) =>
-                  formatAmountInput(parseCurrency(text))
-                }
-              />
-
-              <Text style={styles.label}>{config.singleDateLabel}</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>{formatDateBR(date)}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {mode === "recurring" && (
-            <>
-              <Text style={styles.label}>{config.recurringDateLabel}</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>{formatDateBR(date)}</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.label}>{config.countLabel}</Text>
-              <TouchableOpacity
-                style={styles.selectorButton}
-                onPress={() => setShowCountPicker(true)}
-              >
-                <Text style={styles.selectorText}>{count}x</Text>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </TouchableOpacity>
-
-              <ControlledFormField
-                control={control}
-                name="baseValue"
-                label={config.recurringValueLabel}
-                inputStyle={styles.input}
-                labelStyle={styles.label}
-                placeholder="0,00"
-                keyboardType="numeric"
-                transformValue={(text) =>
-                  formatAmountInput(parseCurrency(text))
-                }
-              />
-
-              <View style={styles.switchContainer}>
-                <Text style={styles.switchLabel}>{config.switchLabel}</Text>
-                <Switch
-                  trackColor={{
-                    false: colors.switchTrackOff,
-                    true: config.color,
-                  }}
-                  thumbColor={
-                    areValuesDifferent ? colors.white : colors.switchThumbOff
-                  }
-                  onValueChange={setAreValuesDifferent}
-                  value={areValuesDifferent}
-                />
-              </View>
-
-              <Text style={[styles.label, { marginTop: 20 }]}>
-                {config.detailLabel}
-              </Text>
-              <View style={styles.listContainer}>
-                {items.map((item, index) => (
-                  <View key={item.id}>
-                    {renderItem({ item, index })}
-                    {index < items.length - 1 && (
-                      <View style={styles.separator} />
-                    )}
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
-
-          <View style={styles.footerContainer}>
-            <AppButton
-              title={isSubmitting ? "Salvando..." : "Salvar"}
-              color={config.color}
-              onPress={handleSubmit(onSubmit)}
-              disabled={isSubmitting}
-            />
-            {transactionToEdit && (
-              <TouchableOpacity
-                onPress={() => navigation.goBack()}
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
-
-        <Modal
-          visible={showCountPicker}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setShowCountPicker(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{config.countModalTitle}</Text>
-              <FlatList
-                data={COUNT_OPTIONS}
-                keyExtractor={(item) => item.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.modalItem}
-                    onPress={() => {
-                      setCount(item);
-                      setShowCountPicker(false);
-                    }}
-                  >
-                    <Text style={styles.modalItemText}>{item}x</Text>
-                  </TouchableOpacity>
-                )}
-              />
-              <AppButton
-                title="Fechar"
-                onPress={() => setShowCountPicker(false)}
-                color={config.color}
-              />
-            </View>
-          </View>
-        </Modal>
-
-        <TagPickerModal
-          visible={showTagPicker}
-          tags={tags}
-          onSelect={setSelectedTagId}
-          onClose={() => setShowTagPicker(false)}
-          accentColor={config.color}
+        </View>
+      )}
+      <FormField
+        label="Valor (R$)"
+        placeholder="0,00"
+        value={value}
+        onChangeText={setMoney}
+        editable={!locked}
+        keyboardType="decimal-pad"
+        inputStyle={{
+          fontSize: 32,
+          minHeight: 76,
+          fontWeight: "600",
+          letterSpacing: -0.5,
+        }}
+      />
+      <FormField
+        label="Nome"
+        placeholder={type === "income" ? "Ex.: salário" : "Ex.: supermercado"}
+        value={name}
+        onChangeText={setName}
+        editable={!locked}
+        maxLength={120}
+      />
+      <View pointerEvents={locked ? "none" : "auto"} style={{ gap: 16 }}>
+        <DateField
+          value={date}
+          onChange={setDate}
+          label={
+            settled
+              ? type === "income"
+                ? "Data do recebimento"
+                : "Data do pagamento"
+              : "Data prevista"
+          }
         />
-
-        <Toast visible={showToast} message={toastMessage} />
+        <Text style={ui.label}>Situação</Text>
+        <ChoiceGroup
+          value={settled}
+          onChange={setSettled}
+          options={[
+            {
+              value: false,
+              label: type === "income" ? "A receber" : "A pagar",
+            },
+            { value: true, label: type === "income" ? "Recebido" : "Pago" },
+          ]}
+        />
+        <Text style={ui.label}>Tag</Text>
+        <TouchableOpacity
+          onPress={() => setTagOpen(true)}
+          accessibilityRole="button"
+          style={[ui.card, { padding: 16 }]}
+        >
+          <Text style={ui.muted}>
+            {tags.find((tag) => tag.id === tagId)?.name ||
+              "Selecionar tag (opcional)"}
+          </Text>
+        </TouchableOpacity>
+        {tagId && (
+          <AppButton
+            title="Remover tag"
+            variant="neutral"
+            onPress={() => setTagId(null)}
+          />
+        )}
+        {tagsError && (
+          <AppButton
+            title="Tentar carregar tags novamente"
+            variant="neutral"
+            onPress={refreshTags}
+          />
+        )}
+        <TouchableOpacity
+          onPress={() => navigation.navigate(ROUTES.tags)}
+          accessibilityRole="button"
+          style={{ minHeight: 48, justifyContent: "center" }}
+        >
+          <Text style={ui.link}>Gerenciar tags</Text>
+        </TouchableOpacity>
+        {!edit && (
+          <>
+            <Text style={ui.label}>Frequência</Text>
+            <ChoiceGroup
+              value={kind}
+              onChange={(next) => {
+                setKind(next);
+                setDifferent(false);
+                setCustom({});
+                setAmountMode("each");
+              }}
+              options={[
+                { value: "single", label: "Única" },
+                { value: "recurring", label: "Recorrente" },
+                ...(type === "expense"
+                  ? [{ value: "installment", label: "Parcelada" }]
+                  : []),
+              ]}
+            />
+          </>
+        )}
       </View>
-    </KeyboardAvoidingView>
+      {!edit && kind !== "single" && (
+        <View style={ui.card} pointerEvents={locked ? "none" : "auto"}>
+          <Text style={ui.heading}>
+            {kind === "installment" ? "Compra parcelada" : "Repetição mensal"}
+          </Text>
+          <FormField
+            label="Quantidade (2 a 48)"
+            value={count}
+            onChangeText={(text) => setCount(text.replace(/\D/g, ""))}
+            keyboardType="number-pad"
+            maxLength={2}
+            editable={!locked}
+          />
+          {kind === "installment" && (
+            <ChoiceGroup
+              value={amountMode}
+              onChange={(next) => {
+                setAmountMode(next);
+                setDifferent(false);
+                setCustom({});
+              }}
+              options={[
+                { value: "each", label: "Valor por parcela" },
+                { value: "total", label: "Valor total da compra" },
+              ]}
+            />
+          )}
+          <Text style={ui.muted}>
+            {kind === "installment" && amountMode === "total"
+              ? "O total digitado será dividido, distribuindo os centavos sem alterar a soma."
+              : "O valor digitado se repete a cada mês. A série termina após a quantidade escolhida."}
+          </Text>
+          {amountMode !== "total" && (
+            <ChoiceGroup
+              value={different}
+              onChange={setDifferent}
+              options={[
+                { value: false, label: "Valores iguais" },
+                { value: true, label: "Valores diferentes" },
+              ]}
+            />
+          )}
+          <Text style={ui.label}>Revise antes de salvar</Text>
+          {(previewAll ? schedule : schedule.slice(0, 4)).map((item, index) => (
+            <View key={index} style={{ gap: 8 }}>
+              <Text style={ui.muted}>
+                {index + 1} · {formatDateBR(item.date)}
+              </Text>
+              {different ? (
+                <FormField
+                  accessibilityLabel={`Valor da ocorrência ${index + 1}`}
+                  value={custom[index] ?? formatAmountInput(item.amount)}
+                  onChangeText={(text) =>
+                    setCustom((old) => ({
+                      ...old,
+                      [index]: formatAmountInput(parseCurrency(text)),
+                    }))
+                  }
+                  keyboardType="decimal-pad"
+                  editable={!locked}
+                />
+              ) : (
+                <Text style={ui.heading}>{formatCurrency(item.amount)}</Text>
+              )}
+            </View>
+          ))}
+          {schedule.length > 4 && (
+            <AppButton
+              title={previewAll ? "Mostrar menos" : "Ver todas as ocorrências"}
+              variant="neutral"
+              onPress={() => setPreviewAll(!previewAll)}
+            />
+          )}
+          <Text style={ui.heading}>Total: {formatCurrency(total)}</Text>
+          <Text style={ui.muted}>
+            A situação escolhida vale para a primeira ocorrência. As demais
+            começam pendentes.
+          </Text>
+        </View>
+      )}
+      <TouchableOpacity
+        accessibilityRole="button"
+        onPress={() => setDetails(!details)}
+        style={{ minHeight: 48, justifyContent: "center" }}
+      >
+        <Text style={ui.link}>
+          {details ? "Ocultar detalhes" : "Adicionar descrição"}
+        </Text>
+      </TouchableOpacity>
+      {details && (
+        <FormField
+          label="Descrição (opcional)"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          editable={!locked}
+          maxLength={1000}
+        />
+      )}
+      {!!error && (
+        <Text
+          accessibilityRole="alert"
+          style={{ color: colors.expense, fontSize: 14 }}
+        >
+          {error}
+        </Text>
+      )}
+      <AppButton
+        title={
+          locked && !busy ? "Tentar salvar novamente" : "Salvar lançamento"
+        }
+        loading={busy}
+        onPress={save}
+      />
+      <TagPickerModal
+        visible={tagOpen}
+        tags={tags}
+        onSelect={setTagId}
+        onClose={() => setTagOpen(false)}
+      />
+    </Screen>
   );
 }
