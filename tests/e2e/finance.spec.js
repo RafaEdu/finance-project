@@ -186,6 +186,14 @@ async function setup(page, { signedIn = true } = {}) {
         );
         return json(items.find((x) => x.id === id));
       }
+      if (request.method() === "DELETE") {
+        const id = url.searchParams.get("id").replace("eq.", "");
+        const removed = items
+          .filter((x) => x.id === id)
+          .map(({ id }) => ({ id }));
+        items = items.filter((x) => x.id !== id);
+        return json(removed);
+      }
       return json([]);
     }
     return json({});
@@ -342,3 +350,76 @@ for (const width of [320, 360, 390, 430])
       fullPage: true,
     });
   });
+
+test("detalhes permitem atualizar situação, editar, cancelar e excluir uma ocorrência", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.getByRole("button", { name: /Mercado/ }).click();
+  await page
+    .getByRole("button", { name: "Marcar como pendente", exact: true })
+    .click();
+  await expect(page.getByLabel("R$ 4.910,00", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Mercado/ }).click();
+  await page
+    .getByRole("button", { name: "Editar lançamento", exact: true })
+    .click();
+  await page.getByLabel("Nome", { exact: true }).fill("Mercado atualizado");
+  await page
+    .getByRole("button", { name: "Salvar lançamento", exact: true })
+    .click();
+  await expect(
+    page.getByText("Mercado atualizado", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Mercado atualizado/ }).click();
+  await page
+    .getByRole("button", { name: "Editar lançamento", exact: true })
+    .click();
+  await page.getByLabel("Nome", { exact: true }).fill("Não salvar");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await expect(
+    page.getByText("Mercado atualizado", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "＋ Novo lançamento", exact: true })
+    .click();
+  await expect(page.getByLabel("Nome", { exact: true })).toHaveValue("");
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await page.getByRole("button", { name: /Mercado atualizado/ }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page
+    .getByRole("button", { name: "Excluir lançamento", exact: true })
+    .click();
+  await expect(
+    page.getByText("Mercado atualizado", { exact: true }),
+  ).toHaveCount(0);
+});
+
+test("relatórios, filtros e perfil mantêm navegação e privacidade", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.getByRole("tab", { name: /Relatórios/ }).click();
+  await expect(page.getByText("Comparação de despesas")).toBeVisible();
+  await expect(
+    page.getByText("Sem base anterior para calcular a variação."),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/essencial-relatorios.png" });
+  await page
+    .getByRole("button", { name: "Ocultar valores", exact: true })
+    .click();
+  await expect(page.getByText("Comparação oculta")).toBeVisible();
+  await page.getByRole("tab", { name: /Movimentos/ }).click();
+  await page.getByRole("button", { name: "Filtros", exact: true }).click();
+  await page.getByRole("button", { name: "Despesas", exact: true }).click();
+  await page.getByRole("button", { name: "Pendentes", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Ver resultados", exact: true })
+    .click();
+  await expect(page.getByText("4 resultado(s) em todo o filtro")).toBeVisible();
+  await page.screenshot({ path: "test-results/essencial-movimentos.png" });
+  await page.getByRole("tab", { name: /Perfil/ }).click();
+  await expect(page.getByText("Preferências", { exact: true })).toBeVisible();
+  await page.screenshot({ path: "test-results/essencial-perfil.png" });
+});
