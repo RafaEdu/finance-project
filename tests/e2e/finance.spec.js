@@ -296,7 +296,9 @@ test("recuperação exige definir a nova senha após verificar o código", async
   await page
     .getByRole("button", { name: "Esqueci minha senha", exact: true })
     .click();
-  await page.getByLabel("E-mail", { exact: true }).fill("rafael@example.test");
+  await page
+    .getByRole("textbox", { name: "E-mail", exact: true })
+    .fill("rafael@example.test");
   await page
     .getByRole("button", { name: "Enviar código", exact: true })
     .click();
@@ -331,6 +333,10 @@ for (const width of [320, 360, 390, 430])
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    const income = page.getByLabel("R$ 5.200,00", { exact: true }).first();
+    const bounds = await income.boundingBox();
+    expect(bounds.height).toBeLessThan(30);
+    await expect(page.getByRole("tab", { name: /Movimentos/ })).toBeVisible();
     await page.screenshot({
       path: `test-results/essencial-${width}.png`,
       fullPage: true,

@@ -30,7 +30,7 @@ export default function SummaryCard({ summary, compact = false }) {
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
         <View
-          style={[ui.card, { flex: 1, minWidth: 130, padding: 16, gap: 8 }]}
+          style={[ui.card, { flex: 1, minWidth: 150, padding: 16, gap: 8 }]}
         >
           <Text style={ui.label}>↗ Receitas previstas</Text>
           <MoneyText
@@ -39,7 +39,7 @@ export default function SummaryCard({ summary, compact = false }) {
           />
         </View>
         <View
-          style={[ui.card, { flex: 1, minWidth: 130, padding: 16, gap: 8 }]}
+          style={[ui.card, { flex: 1, minWidth: 150, padding: 16, gap: 8 }]}
         >
           <Text style={ui.label}>↘ Despesas previstas</Text>
           <MoneyText

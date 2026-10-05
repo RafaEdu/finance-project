@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, Text } from "react-native";
 import Sheet from "./Sheet";
 import AppButton from "./AppButton";
@@ -19,9 +19,11 @@ export default function TransactionDetails({
   onChanged,
   navigation,
 }) {
+  const running = useRef(false);
   const [busy, setBusy] = useState(false);
   const run = async (operation) => {
-    if (busy) return;
+    if (running.current) return;
+    running.current = true;
     setBusy(true);
     try {
       const { error } = await operation();
@@ -34,6 +36,7 @@ export default function TransactionDetails({
         "Tente novamente. Seus dados não foram descartados.",
       );
     } finally {
+      running.current = false;
       setBusy(false);
     }
   };

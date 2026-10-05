@@ -58,6 +58,7 @@ export default function DashboardScreen({ navigation }) {
               onPress={() =>
                 navigation.navigate(ROUTES.transactions, {
                   initialDate: date.toISOString(),
+                  selectionKey: Date.now(),
                   initialPeriod: type,
                 })
               }

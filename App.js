@@ -72,7 +72,7 @@ function AppTabs() {
       <Tab.Screen
         name={ROUTES.transactions}
         component={TransactionsScreen}
-        options={{ title: "Movimentações" }}
+        options={{ title: "Movimentações", tabBarLabel: "Movimentos" }}
       />
       <Tab.Screen
         name={ROUTES.insights}

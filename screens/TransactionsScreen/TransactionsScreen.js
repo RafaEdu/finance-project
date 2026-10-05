@@ -26,7 +26,7 @@ import ErrorState from "../../components/ErrorState";
 import LoadingView from "../../components/LoadingView";
 import EmptyState from "../../components/EmptyState";
 export default function TransactionsScreen({ navigation, route }) {
-  const incomingKey = `${route.params?.initialDate || ""}:${route.params?.initialPeriod || ""}`;
+  const incomingKey = `${route.params?.selectionKey || ""}:${route.params?.initialDate || ""}:${route.params?.initialPeriod || ""}`;
   const [periodState, setPeriodState] = useState(() => ({
     key: incomingKey,
     date: new Date(route.params?.initialDate || Date.now()),

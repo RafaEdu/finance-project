@@ -65,7 +65,18 @@ export default function ResetPasswordScreen() {
         title="Sair da recuperação"
         variant="neutral"
         disabled={busy}
-        onPress={signOut}
+        onPress={async () => {
+          setBusy(true);
+          setError("");
+          try {
+            const result = await signOut();
+            if (result.error) throw result.error;
+          } catch {
+            setError("Não foi possível sair. Tente novamente.");
+          } finally {
+            setBusy(false);
+          }
+        }}
       />
     </Screen>
   );
