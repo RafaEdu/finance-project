@@ -1,434 +1,205 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Alert,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-} from "react-native";
+import React, { useRef, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../../context/AuthContext";
-import { styles } from "./TagsScreen.styles";
-import { TAG_COLORS, colors } from "../../constants/colors";
 import { useTags } from "../../hooks/useTags";
 import { createTag, updateTag, deleteTag } from "../../services/tagsService";
-import { getContrastTextColor, isValidHex } from "../../utils/color";
+import { getContrastTextColor } from "../../utils/color";
 import { tagSchema } from "../../utils/validators";
-import LoadingView from "../../components/LoadingView";
-import EmptyState from "../../components/EmptyState";
+import { notify } from "../../utils/notify";
+import { ui } from "../../constants/theme";
+import { colors, TAG_COLORS } from "../../constants/colors";
+import Screen from "../../components/Screen";
+import ScreenHeader from "../../components/ScreenHeader";
+import Sheet from "../../components/Sheet";
+import FormField from "../../components/FormField";
 import AppButton from "../../components/AppButton";
-import ControlledFormField from "../../components/ControlledFormField";
-import ColorPicker from "../../components/ColorPicker";
-import ColorGradientPicker from "../../components/ColorGradientPicker";
-import Toast from "../../components/Toast";
-
-export default function TagsScreen() {
+import EmptyState from "../../components/EmptyState";
+import LoadingView from "../../components/LoadingView";
+import ErrorState from "../../components/ErrorState";
+import { confirmDestructive } from "../../components/ConfirmDialog";
+export default function TagsScreen({ navigation }) {
   const { user } = useAuth();
-  const {
-    tags,
-    loading,
-    refresh: fetchTags,
-  } = useTags({
-    orderBy: "createdAt",
-    ascending: false,
-  });
-
-  // Formulário de criação
-  const {
-    control: createControl,
-    handleSubmit: handleCreateSubmit,
-    reset: resetCreate,
-    setValue: setCreateValue,
-    watch: watchCreate,
-    formState: { errors: createErrors, isSubmitting: isCreating },
-  } = useForm({
-    resolver: zodResolver(tagSchema),
-    defaultValues: { name: "", color: TAG_COLORS[0] },
-  });
-
-  const [newTagHexInput, setNewTagHexInput] = useState(TAG_COLORS[0]);
-  const newTagName = watchCreate("name");
-  const newTagColor = watchCreate("color");
-
-  // Gradiente aberto ao tocar na bolinha de cor ("create" | "edit" | null)
-  const [pickerTarget, setPickerTarget] = useState(null);
-
-  const [toast, setToast] = useState({ visible: false, message: "" });
-
-  const showToast = (message) => {
-    setToast({ visible: true, message });
-    setTimeout(() => setToast({ visible: false, message: "" }), 1500);
-  };
-
-  // Modal de edição
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editingTag, setEditingTag] = useState(null);
-  const [editHexInput, setEditHexInput] = useState(TAG_COLORS[0]);
-
-  const {
-    control: editControl,
-    handleSubmit: handleEditSubmit,
-    reset: resetEdit,
-    setValue: setEditValue,
-    watch: watchEdit,
-    formState: { errors: editErrors },
-  } = useForm({
-    resolver: zodResolver(tagSchema),
-    defaultValues: { name: "", color: TAG_COLORS[0] },
-  });
-
-  const editName = watchEdit("name");
-  const editColor = watchEdit("color");
-
-  const handleNewColorSelect = (color) => {
-    setCreateValue("color", color, { shouldValidate: true });
-    setNewTagHexInput(color);
-  };
-
-  const handleNewHexChange = (text) => {
-    let hex = text;
-    if (!hex.startsWith("#")) hex = "#" + hex;
-    setNewTagHexInput(hex);
-    if (isValidHex(hex)) {
-      setCreateValue("color", hex, { shouldValidate: true });
-    }
-  };
-
-  const handleEditColorSelect = (color) => {
-    setEditValue("color", color, { shouldValidate: true });
-    setEditHexInput(color);
-  };
-
-  const handleEditHexChange = (text) => {
-    let hex = text;
-    if (!hex.startsWith("#")) hex = "#" + hex;
-    setEditHexInput(hex);
-    if (isValidHex(hex)) {
-      setEditValue("color", hex, { shouldValidate: true });
-    }
-  };
-
-  const onCreateTag = async ({ name, color }) => {
-    const { error } = await createTag(user.id, {
-      name: name.trim(),
-      color,
-      textColor: getContrastTextColor(color),
-    });
-
-    if (error) {
-      Alert.alert("Erro", error.message);
+  const { tags, loading, error, refresh } = useTags();
+  const [form, setForm] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
+  const save = async () => {
+    if (saving.current) return;
+    const validated = tagSchema.safeParse(form);
+    if (!validated.success) {
+      setFormError(validated.error.issues[0].message);
       return;
     }
-
-    resetCreate({ name: "", color: TAG_COLORS[0] });
-    setNewTagHexInput(TAG_COLORS[0]);
-    setPickerTarget(null);
-    fetchTags();
-    showToast("Tag criada!");
-  };
-
-  const handleDeleteTag = (tag) => {
-    Alert.alert(
-      "Excluir Tag",
-      `Deseja excluir a tag "${tag.name}"? As transações que usam essa tag não serão excluídas, apenas perderão a marcação.`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            const { error } = await deleteTag(tag.id);
-
-            if (error) {
-              Alert.alert("Erro", error.message);
-            } else {
-              fetchTags();
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  const openEditModal = (tag) => {
-    setPickerTarget(null);
-    setEditingTag(tag);
-    resetEdit({ name: tag.name, color: tag.color || TAG_COLORS[0] });
-    setEditHexInput(tag.color || TAG_COLORS[0]);
-    setEditModalVisible(true);
-  };
-
-  const onUpdateTag = async ({ name, color }) => {
-    const { error } = await updateTag(editingTag.id, {
-      name: name.trim(),
-      color,
-      textColor: getContrastTextColor(color),
-    });
-
-    if (error) {
-      Alert.alert("Erro", error.message);
-      return;
+    saving.current = true;
+    setBusy(true);
+    setFormError("");
+    try {
+      const value = {
+        ...validated.data,
+        textColor: getContrastTextColor(form.color),
+      };
+      const result = form.id
+        ? await updateTag(form.id, value)
+        : await createTag(user.id, value);
+      if (result.error) throw result.error;
+      setForm(null);
+      refresh();
+    } catch {
+      setFormError("Não foi possível salvar a tag. Tente novamente.");
+    } finally {
+      saving.current = false;
+      setBusy(false);
     }
-
-    setEditModalVisible(false);
-    setEditingTag(null);
-    setPickerTarget(null);
-    fetchTags();
-    showToast("Tag atualizada!");
   };
-
-  // Preview de como a tag vai aparecer no histórico
-  const renderTagPreview = (name, bgColor) => {
-    const displayName = name.trim() || "Nome da tag";
-    const textColor = isValidHex(bgColor)
-      ? getContrastTextColor(bgColor)
-      : colors.white;
-    const displayBg = isValidHex(bgColor) ? bgColor : colors.borderStrong;
-
-    return (
-      <View style={styles.previewContainer}>
-        <Text style={styles.previewLabel}>Preview no histórico:</Text>
-        <View style={styles.previewCard}>
-          <View style={styles.previewIconWrapper}>
-            <Ionicons
-              name="arrow-down-circle"
-              size={24}
-              color={colors.expense}
-            />
-          </View>
-          <View style={styles.previewInfo}>
-            <View style={styles.previewTitleRow}>
-              <Text style={styles.previewTitle}>Exemplo transação</Text>
-              <View
-                style={[styles.previewTagBadge, { backgroundColor: displayBg }]}
-              >
-                <Text style={[styles.previewTagText, { color: textColor }]}>
-                  {displayName}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.previewDate}>05/02/2026</Text>
-          </View>
-          <Text style={[styles.previewValue, { color: colors.expense }]}>
-            - R$ 50,00
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
+  const remove = (tag) =>
+    confirmDestructive({
+      title: "Excluir tag?",
+      message: `A tag ${tag.name} será removida. Os lançamentos serão preservados.`,
+      onConfirm: async () => {
+        try {
+          const result = await deleteTag(tag.id);
+          if (result.error) throw result.error;
+          refresh();
+        } catch {
+          notify("Não foi possível excluir", "Tente novamente.");
+        }
+      },
+    });
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Minhas Tags</Text>
-
-        {/* Formulário de criação */}
-        <View style={styles.formContainer}>
-          <ControlledFormField
-            control={createControl}
-            name="name"
-            label="Nova Tag"
-            inputStyle={styles.input}
-            labelStyle={styles.label}
-            placeholder="Nome da tag"
-            maxLength={30}
-          />
-
-          <Text style={styles.colorLabel}>Cor (toque na bolinha ou digite):</Text>
-          <ColorPicker
-            selectedColor={newTagColor}
-            onSelect={handleNewColorSelect}
-          />
-
-          <View style={styles.hexInputRow}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() =>
-                setPickerTarget((prev) => (prev === "create" ? null : "create"))
-              }
-              style={[
-                styles.hexPreviewDot,
-                {
-                  backgroundColor: isValidHex(newTagColor)
-                    ? newTagColor
-                    : colors.borderStrong,
-                },
-                pickerTarget === "create" && styles.hexPreviewDotActive,
-              ]}
-            />
-            <TextInput
-              style={styles.hexInput}
-              placeholder="#2980b9"
-              placeholderTextColor={colors.placeholder}
-              value={newTagHexInput}
-              onChangeText={handleNewHexChange}
-              maxLength={7}
-              autoCapitalize="none"
-            />
-          </View>
-          {!!createErrors.color && (
-            <Text style={styles.errorText}>{createErrors.color.message}</Text>
-          )}
-
-          {pickerTarget === "create" && (
-            <ColorGradientPicker
-              color={newTagColor}
-              onSelect={handleNewColorSelect}
-            />
-          )}
-
-          {/* Preview em tempo real */}
-          {renderTagPreview(newTagName, newTagColor)}
-
-          <AppButton
-            title={isCreating ? "Salvando..." : "Criar Tag"}
-            onPress={handleCreateSubmit(onCreateTag)}
-            disabled={isCreating}
-            color={colors.accent}
-          />
-        </View>
-
-        {/* Lista de tags */}
-        <Text style={styles.listTitle}>Tags Cadastradas</Text>
-
-        {loading ? (
-          <LoadingView />
-        ) : tags.length === 0 ? (
-          <EmptyState text="Nenhuma tag cadastrada ainda." />
-        ) : (
-          tags.map((tag) => (
-            <View key={tag.id} style={styles.tagItem}>
+    <Screen>
+      <ScreenHeader
+        title="Minhas tags"
+        subtitle="Organize lançamentos do seu jeito."
+        onBack={() => navigation.goBack()}
+      />
+      <AppButton
+        title="Criar tag"
+        onPress={() => {
+          setFormError("");
+          setForm({ name: "", color: colors.primary });
+        }}
+      />
+      {error ? (
+        <ErrorState onRetry={refresh} />
+      ) : loading ? (
+        <LoadingView />
+      ) : !tags.length ? (
+        <EmptyState text="Crie tags como Casa, Trabalho e Alimentação para organizar seus lançamentos." />
+      ) : (
+        tags.map((tag) => (
+          <View key={tag.id} style={[ui.card, ui.between, { padding: 12 }]}>
+            <View style={[ui.row, { flex: 1 }]}>
               <View
-                style={[
-                  styles.tagBadgeInline,
-                  { backgroundColor: tag.color || colors.accent },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.tagBadgeText,
-                    {
-                      color:
-                        tag.textColor ||
-                        getContrastTextColor(tag.color || colors.accent),
-                    },
-                  ]}
-                >
-                  {tag.name}
-                </Text>
-              </View>
-              <View style={styles.tagActions}>
-                <TouchableOpacity onPress={() => openEditModal(tag)}>
-                  <Ionicons name="pencil" size={20} color={colors.accent} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteTag(tag)}>
-                  <Ionicons name="trash" size={20} color={colors.expense} />
-                </TouchableOpacity>
-              </View>
+                style={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: 6,
+                  backgroundColor: tag.color,
+                }}
+              />
+              <Text style={[ui.heading, { flexShrink: 1 }]}>{tag.name}</Text>
             </View>
-          ))
-        )}
-
-        {/* Modal de Edição */}
-        <Modal
-          visible={editModalVisible}
-          transparent={true}
-          animationType="fade"
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={styles.modalTitle}>Editar Tag</Text>
-
-                <ControlledFormField
-                  control={editControl}
-                  name="name"
-                  label="Nome"
-                  inputStyle={styles.input}
-                  labelStyle={styles.label}
-                  placeholder="Nome da tag"
-                  maxLength={30}
-                />
-
-                <Text style={styles.colorLabel}>
-                  Cor (toque na bolinha ou digite):
-                </Text>
-                <ColorPicker
-                  selectedColor={editColor}
-                  onSelect={handleEditColorSelect}
-                />
-
-                <View style={styles.hexInputRow}>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() =>
-                      setPickerTarget((prev) =>
-                        prev === "edit" ? null : "edit",
-                      )
-                    }
-                    style={[
-                      styles.hexPreviewDot,
-                      {
-                        backgroundColor: isValidHex(editColor)
-                          ? editColor
-                          : colors.borderStrong,
-                      },
-                      pickerTarget === "edit" && styles.hexPreviewDotActive,
-                    ]}
-                  />
-                  <TextInput
-                    style={styles.hexInput}
-                    placeholder="#2980b9"
-                    placeholderTextColor={colors.placeholder}
-                    value={editHexInput}
-                    onChangeText={handleEditHexChange}
-                    maxLength={7}
-                    autoCapitalize="none"
-                  />
-                </View>
-                {!!editErrors.color && (
-                  <Text style={styles.errorText}>
-                    {editErrors.color.message}
-                  </Text>
-                )}
-
-                {pickerTarget === "edit" && (
-                  <ColorGradientPicker
-                    color={editColor}
-                    onSelect={handleEditColorSelect}
-                  />
-                )}
-
-                {/* Preview em tempo real */}
-                {renderTagPreview(editName, editColor)}
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonCancel]}
-                    onPress={() => {
-                      setPickerTarget(null);
-                      setEditModalVisible(false);
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Editar tag ${tag.name}`}
+              onPress={() => {
+                setFormError("");
+                setForm(tag);
+              }}
+              style={ui.iconButton}
+            >
+              <Ionicons
+                name="pencil-outline"
+                size={21}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Excluir tag ${tag.name}`}
+              onPress={() => remove(tag)}
+              style={ui.iconButton}
+            >
+              <Ionicons name="trash-outline" size={21} color={colors.expense} />
+            </TouchableOpacity>
+          </View>
+        ))
+      )}
+      <Sheet
+        visible={!!form}
+        title={form?.id ? "Editar tag" : "Nova tag"}
+        onClose={() => {
+          if (!busy) setForm(null);
+        }}
+      >
+        {form && (
+          <>
+            <FormField
+              label="Nome da tag"
+              value={form.name}
+              onChangeText={(name) => setForm({ ...form, name })}
+              maxLength={30}
+              editable={!busy}
+            />
+            <Text style={ui.label}>Cor</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+              {TAG_COLORS.map((color) => (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={`Cor ${color}`}
+                  accessibilityState={{
+                    selected: form.color.toLowerCase() === color.toLowerCase(),
+                  }}
+                  key={color}
+                  onPress={() => setForm({ ...form, color })}
+                  disabled={busy}
+                  style={{
+                    width: 48,
+                    height: 48,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      backgroundColor: color,
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
                   >
-                    <Text style={styles.modalButtonText}>Cancelar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.modalButtonSave]}
-                    onPress={handleEditSubmit(onUpdateTag)}
-                  >
-                    <Text style={styles.modalButtonTextSave}>Salvar</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
+                    {form.color.toLowerCase() === color.toLowerCase() && (
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={getContrastTextColor(color)}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
-          </View>
-        </Modal>
-      </ScrollView>
-      <Toast visible={toast.visible} message={toast.message} />
-    </View>
+            <FormField
+              label="Cor personalizada (#RRGGBB)"
+              value={form.color}
+              onChangeText={(color) => setForm({ ...form, color })}
+              maxLength={7}
+              autoCapitalize="characters"
+              editable={!busy}
+            />
+            {!!formError && (
+              <Text accessibilityRole="alert" style={{ color: colors.expense }}>
+                {formError}
+              </Text>
+            )}
+            <AppButton title="Salvar tag" onPress={save} loading={busy} />
+          </>
+        )}
+      </Sheet>
+    </Screen>
   );
 }

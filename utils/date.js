@@ -66,7 +66,6 @@ export function changeDate(date, type, direction) {
   const newDate = new Date(date);
   if (type === "day") newDate.setDate(newDate.getDate() + direction);
   else if (type === "month") return addMonthsClamped(date, direction);
-  else if (type === "year")
-    return addMonthsClamped(date, direction * 12);
+  else if (type === "year") return addMonthsClamped(date, direction * 12);
   return newDate;
 }

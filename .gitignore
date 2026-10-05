@@ -46,4 +46,7 @@ coverage/
 /android
 
 # other
-.github/
+
+# Test artifacts
+playwright-report/
+test-results/

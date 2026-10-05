@@ -1,329 +1,205 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  RefreshControl,
-  Platform,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useAuth } from "../../context/AuthContext";
-import { styles } from "./InsightsScreen.styles";
+import React, { useState } from "react";
+import { View, Text, RefreshControl } from "react-native";
+import { useFinanceQuery } from "../../hooks/useFinanceQuery";
+import { getDateRange, changeDate, addMonthsClamped } from "../../utils/date";
+import { percentageChange } from "../../utils/finance";
+import { usePreferences } from "../../context/PreferencesContext";
+import { ui } from "../../constants/theme";
 import { colors } from "../../constants/colors";
-import { formatCurrency } from "../../utils/currency";
-import { getDateRange } from "../../utils/date";
-import { useTags } from "../../hooks/useTags";
-import { useTransactions } from "../../hooks/useTransactions";
-import { getSums } from "../../services/transactionsService";
+import Screen from "../../components/Screen";
+import ScreenHeader from "../../components/ScreenHeader";
+import SummaryCard from "../../components/SummaryCard";
+import MoneyText from "../../components/MoneyText";
+import PeriodPicker from "../../components/PeriodPicker";
 import LoadingView from "../../components/LoadingView";
-import EmptyState from "../../components/EmptyState";
 import ErrorState from "../../components/ErrorState";
-import PeriodFilter from "../../components/PeriodFilter";
-import DateNavigator from "../../components/DateNavigator";
-import TransactionCard from "../../components/TransactionCard";
-
+import EmptyState from "../../components/EmptyState";
 export default function InsightsScreen() {
-  const { user } = useAuth();
-  const tabBarHeight = useBottomTabBarHeight();
-
-  // Tags
-  const {
-    tags,
-    loading: tagsLoading,
-    error: tagsError,
-    refresh: refreshTags,
-  } = useTags();
-  const [selectedTagId, setSelectedTagId] = useState(null);
-
-  // Period filter
-  const [filterType, setFilterType] = useState("month");
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  // All-time totals
-  const [allTimeIncome, setAllTimeIncome] = useState(0);
-  const [allTimeExpense, setAllTimeExpense] = useState(0);
-  const [allTimeBalance, setAllTimeBalance] = useState(0);
-
-  const { startISO, endISO } = getDateRange(currentDate, filterType);
-  const {
-    transactions,
-    loading,
-    refreshing,
-    error,
-    refresh: refreshTransactions,
-  } = useTransactions({
-    startISO,
-    endISO,
-    tagId: selectedTagId,
-  });
-
-  const periodIncome = useMemo(
-    () =>
-      transactions
-        .filter((item) => item.type === "income")
-        .reduce((acc, item) => acc + item.amount, 0),
-    [transactions],
+  const [date, setDate] = useState(new Date());
+  const [type, setType] = useState("month");
+  const { visible } = usePreferences();
+  const current = useFinanceQuery(getDateRange(date, type), { pageSize: 0 });
+  const previous = useFinanceQuery(
+    getDateRange(changeDate(date, type, -1), type),
+    { pageSize: 0 },
   );
-
-  const periodExpense = useMemo(
-    () =>
-      transactions
-        .filter((item) => item.type === "expense")
-        .reduce((acc, item) => acc + item.amount, 0),
-    [transactions],
+  const historyStart = getDateRange(
+    addMonthsClamped(date, -5),
+    "month",
+  ).startISO;
+  const historyEnd = getDateRange(date, "month").endISO;
+  const history = useFinanceQuery(
+    { startISO: historyStart, endISO: historyEnd },
+    { pageSize: 0 },
   );
-
-  const periodBalance = periodIncome - periodExpense;
-
-  // --- Effects ---
-
-  // Reset selection if the selected tag was deleted
-  useEffect(() => {
-    if (
-      selectedTagId &&
-      !tagsLoading &&
-      !tagsError &&
-      !tags.find((t) => t.id === selectedTagId)
-    ) {
-      setSelectedTagId(null);
-    }
-  }, [tags, tagsLoading, tagsError, selectedTagId]);
-
-  // All-time totals for the selected tag
-  useEffect(() => {
-    if (!user?.id) {
-      setAllTimeIncome(0);
-      setAllTimeExpense(0);
-      setAllTimeBalance(0);
-      return;
-    }
-
-    let active = true;
-    getSums(user.id, { tagId: selectedTagId }).then(({ data }) => {
-      if (active && data) {
-        setAllTimeIncome(data.income);
-        setAllTimeExpense(data.expense);
-        setAllTimeBalance(data.balance);
-      }
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [user?.id, selectedTagId, transactions]);
-
-  // --- Event Handlers ---
-
-  const onRefresh = () => {
-    refreshTags();
-    refreshTransactions();
+  const refresh = () => {
+    current.refresh();
+    previous.refresh();
+    history.refresh();
   };
-
-  const handleDatePickerChange = (event, selectedDate) => {
-    setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) setCurrentDate(selectedDate);
-  };
-
-  const handleTagSelect = (tagId) => {
-    if (selectedTagId === tagId) {
-      setSelectedTagId(null);
-    } else {
-      setSelectedTagId(tagId);
-    }
-  };
-
-  // --- Loading State ---
-
-  if (loading && !refreshing && tags.length === 0) {
-    return <LoadingView fullScreen />;
-  }
-
-  // --- Main Render ---
-
+  const change =
+    current.data && previous.data
+      ? percentageChange(
+          current.data.summary.expense,
+          previous.data.summary.expense,
+        )
+      : null;
+  const max = Math.max(
+    1,
+    ...(history.data?.months || []).flatMap((month) => [
+      month.income,
+      month.expense,
+    ]),
+  );
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: tabBarHeight + 16 },
-        ]}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Tag Picker */}
-        <View style={styles.tagPickerContainer}>
-          <Text style={styles.tagPickerLabel}>Filtrar por tag:</Text>
-
-          {tags.length === 0 ? (
-            <Text style={styles.noTagsText}>
-              Todas as movimentações. Crie tags para filtrar por assunto.
+    <Screen
+      refreshControl={
+        <RefreshControl refreshing={current.refreshing} onRefresh={refresh} />
+      }
+    >
+      <ScreenHeader
+        title="Relatórios"
+        subtitle="Entenda para onde seu dinheiro vai."
+        privacy
+      />
+      <PeriodPicker
+        date={date}
+        type={type}
+        onDateChange={setDate}
+        onTypeChange={setType}
+      />
+      {current.error ? (
+        <ErrorState onRetry={refresh} />
+      ) : !current.data ? (
+        <LoadingView />
+      ) : (
+        <>
+          <SummaryCard summary={current.data.summary} compact />
+          <View style={ui.card}>
+            <Text style={ui.heading}>Comparação de despesas</Text>
+            <Text style={ui.muted}>
+              Período selecionado versus período anterior completo.
             </Text>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tagScrollContent}
-            >
-              <TouchableOpacity
-                style={[
-                  styles.clearTagButton,
-                  !selectedTagId && styles.clearTagButtonActive,
-                ]}
-                onPress={() => setSelectedTagId(null)}
-              >
-                <Text style={styles.clearTagText}>Todas</Text>
-              </TouchableOpacity>
-
-              {tags.map((tag) => (
-                <TouchableOpacity
-                  key={tag.id}
-                  style={[
-                    styles.tagChip,
-                    { backgroundColor: tag.color || colors.accent },
-                    selectedTagId === tag.id && styles.tagChipSelected,
-                  ]}
-                  onPress={() => handleTagSelect(tag.id)}
-                >
-                  <Text
-                    style={[
-                      styles.tagChipText,
-                      { color: tag.textColor || colors.white },
-                    ]}
-                  >
-                    {tag.name}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-
-        {/* O período também se aplica à opção Todas. */}
-        <PeriodFilter value={filterType} onChange={setFilterType} />
-
-        <DateNavigator
-          date={currentDate}
-          type={filterType}
-          onChange={setCurrentDate}
-          onPressDate={() => setShowDatePicker(true)}
-        />
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={currentDate}
-            mode="date"
-            display="default"
-            onChange={handleDatePickerChange}
-          />
-        )}
-
-        {/* Resumo do período selecionado */}
-        {!loading && !error && (
-          <>
-            <View style={styles.summaryContainer}>
-              <View style={[styles.summaryCard, styles.incomeCard]}>
-                <Ionicons name="trending-up" size={24} color={colors.income} />
-                <Text style={styles.summaryLabel}>Receitas</Text>
-                <Text style={[styles.summaryValue, { color: colors.income }]}>
-                  {formatCurrency(periodIncome)}
-                </Text>
-              </View>
-              <View style={[styles.summaryCard, styles.expenseCard]}>
-                <Ionicons
-                  name="trending-down"
-                  size={24}
-                  color={colors.expense}
-                />
-                <Text style={styles.summaryLabel}>Despesas</Text>
-                <Text style={[styles.summaryValue, { color: colors.expense }]}>
-                  {formatCurrency(periodExpense)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.netBalanceCard}>
-              <Text style={styles.netBalanceLabel}>
-                {filterType === "day"
-                  ? "Saldo do Dia"
-                  : filterType === "month"
-                    ? "Saldo do Mês"
-                    : "Saldo do Ano"}
-              </Text>
-              <Text
-                style={[
-                  styles.netBalanceValue,
-                  {
-                    color:
-                      periodBalance >= 0 ? colors.positive : colors.expense,
-                  },
-                ]}
-              >
-                {formatCurrency(periodBalance)}
-              </Text>
-            </View>
-
-            <View style={styles.allTimeContainer}>
-              <Text style={styles.allTimeTitle}>Totais desde o início</Text>
-              <View style={styles.allTimeRow}>
-                <Text style={styles.allTimeLabel}>Receitas:</Text>
-                <Text style={[styles.allTimeValue, { color: colors.income }]}>
-                  {formatCurrency(allTimeIncome)}
-                </Text>
-              </View>
-              <View style={styles.allTimeRow}>
-                <Text style={styles.allTimeLabel}>Despesas:</Text>
-                <Text style={[styles.allTimeValue, { color: colors.expense }]}>
-                  {formatCurrency(allTimeExpense)}
-                </Text>
-              </View>
-              <View style={styles.allTimeRow}>
-                <Text style={styles.allTimeLabel}>Saldo:</Text>
-                <Text
-                  style={[
-                    styles.allTimeValue,
-                    {
-                      color:
-                        allTimeBalance >= 0 ? colors.income : colors.expense,
-                    },
-                  ]}
-                >
-                  {formatCurrency(allTimeBalance)}
-                </Text>
-              </View>
-            </View>
-          </>
-        )}
-
-        {/* Histórico do período selecionado */}
-        {!loading && !error && (
-          <>
-            <Text style={styles.sectionTitle}>Histórico de Movimentações</Text>
-
-            {transactions.length === 0 ? (
-              <EmptyState text="Nenhuma movimentação encontrada para este filtro no período." />
+            {previous.error ? (
+              <ErrorState onRetry={previous.refresh} />
+            ) : !previous.data ? (
+              <LoadingView />
             ) : (
-              <View>
-                {transactions.map((item) => (
-                  <TransactionCard
-                    key={`${item.type}-${item.id}`}
-                    transaction={item}
-                    tag={tags.find((t) => t.id === item.tagId)}
+              <>
+                <View style={[ui.between, { flexWrap: "wrap" }]}>
+                  <Text style={ui.label}>Período anterior</Text>
+                  <MoneyText
+                    value={previous.data.summary.expense}
+                    style={ui.heading}
                   />
-                ))}
-              </View>
+                </View>
+                <Text style={ui.muted}>
+                  {!visible
+                    ? "Comparação oculta"
+                    : change === null
+                      ? "Sem base anterior para calcular a variação."
+                      : `${Math.abs(change).toFixed(1).replace(".", ",")}% ${change >= 0 ? "a mais" : "a menos"} em despesas previstas.`}
+                </Text>
+              </>
             )}
-          </>
+          </View>
+          <View style={ui.card}>
+            <Text style={ui.heading}>Despesas por tag</Text>
+            <Text style={ui.muted}>
+              Valores previstos, incluindo pendências.
+            </Text>
+            {!current.data.categories.length ? (
+              <EmptyState text="Nenhuma despesa neste período." />
+            ) : (
+              current.data.categories.map((category) => (
+                <View key={category.tag_id || "none"} style={{ gap: 8 }}>
+                  <View style={[ui.between, { flexWrap: "wrap" }]}>
+                    <Text style={[ui.label, { flexShrink: 1 }]}>
+                      {category.tag_name}
+                    </Text>
+                    <MoneyText value={category.amount} style={ui.heading} />
+                  </View>
+                  {visible && (
+                    <View
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      style={{
+                        height: 8,
+                        backgroundColor: colors.segmentBackground,
+                        borderRadius: 4,
+                      }}
+                    >
+                      <View
+                        style={{
+                          height: 8,
+                          borderRadius: 4,
+                          width: `${current.data.summary.expense ? (category.amount / current.data.summary.expense) * 100 : 0}%`,
+                          backgroundColor: colors.primary,
+                        }}
+                      />
+                    </View>
+                  )}
+                </View>
+              ))
+            )}
+          </View>
+        </>
+      )}
+      <View style={ui.card}>
+        <Text style={ui.heading}>Últimos seis meses</Text>
+        <Text style={ui.muted}>
+          Receitas e despesas previstas por mês, até o mês selecionado.
+        </Text>
+        {history.error ? (
+          <ErrorState onRetry={history.refresh} />
+        ) : !history.data ? (
+          <LoadingView />
+        ) : !history.data.months.length ? (
+          <EmptyState text="Ainda não há histórico para comparar." />
+        ) : (
+          history.data.months.map((month) => (
+            <View key={month.month} style={{ gap: 8 }}>
+              <Text style={ui.label}>
+                {month.month.split("-").reverse().join("/")}
+              </Text>
+              <View style={ui.between}>
+                <Text style={ui.muted}>Receitas</Text>
+                <MoneyText
+                  value={month.income}
+                  style={{ color: colors.income, fontWeight: "600" }}
+                />
+              </View>
+              {visible && (
+                <View
+                  style={{
+                    height: 6,
+                    borderRadius: 4,
+                    backgroundColor: colors.income,
+                    width: `${(month.income / max) * 100}%`,
+                  }}
+                />
+              )}
+              <View style={ui.between}>
+                <Text style={ui.muted}>Despesas</Text>
+                <MoneyText
+                  value={month.expense}
+                  style={{ color: colors.expense, fontWeight: "600" }}
+                />
+              </View>
+              {visible && (
+                <View
+                  style={{
+                    height: 6,
+                    borderRadius: 4,
+                    backgroundColor: colors.expense,
+                    width: `${(month.expense / max) * 100}%`,
+                  }}
+                />
+              )}
+            </View>
+          ))
         )}
-
-        {error && <ErrorState onRetry={onRefresh} />}
-        {loading && !refreshing && <LoadingView />}
-      </ScrollView>
-    </View>
+      </View>
+    </Screen>
   );
 }

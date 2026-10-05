@@ -1,133 +1,75 @@
-# 💸 Finance App - Controle Financeiro Pessoal
+# Finance App · Essencial
 
-Bem-vindo ao **Finance App**! Este é um aplicativo mobile multiplataforma (Android & iOS) desenvolvido para simplificar a gestão da sua grana. A ideia é simples: registre o que entra, o que sai e tenha o controle do seu saldo na palma da mão. 📱✨
+Controle financeiro em React Native/Expo e Supabase, com interface em português.
 
-## 🚀 Sobre o Projeto
+- **Início:** resultado previsto e realizado do período, receitas, despesas e lançamentos recentes.
+- **Movimentações:** busca, filtros combináveis, lista paginada e totais de todo o filtro.
+- **Novo lançamento:** receita/despesa, situação, tag, recorrência ou parcelamento com revisão das datas e valores.
+- **Relatórios:** comparação entre períodos, distribuição por tag e evolução mensal.
+- **Perfil:** dados pessoais, privacidade dos valores, tags e recuperação de senha por código.
 
-O objetivo deste app é oferecer uma interface limpa e direta para o controle diário de finanças. Nada de planilhas complexas! Aqui você cadastra suas receitas e despesas, visualiza o saldo do dia ou do mês e acompanha seu histórico com filtros inteligentes.
+Os resultados representam os lançamentos registrados; não representam saldo bancário conciliado.
 
-**Principais Funcionalidades:**
+## Executar
 
-- 🔐 **Autenticação Segura:** Login, Cadastro e Recuperação de Senha via E-mail (com OTP/Código de verificação).
-- 📊 **Dashboard Interativo:** Visão geral do saldo atual, receitas e despesas.
-- 📅 **Filtros Inteligentes:** Visualize suas movimentações por Dia, Mês ou Ano.
-- 💰 **Gestão de Movimentações:** Adicione, edite ou exclua receitas e despesas facilmente.
-- 👤 **Perfil de Usuário:** Gerencie seus dados e altere sua senha com segurança.
-
----
-
-## 🛠️ Tech Stack (Tecnologias)
-
-Este projeto foi construído utilizando as melhores práticas do ecossistema JavaScript. Se liga no que tem debaixo do capô:
-
-| Tecnologia              | Onde é aplicada?                                                                       |
-| :---------------------- | :------------------------------------------------------------------------------------- |
-| **React Native (Expo)** | Framework principal para criar a interface nativa (Android/iOS) usando JavaScript.     |
-| **JavaScript (ES6+)**   | Linguagem base de todo o projeto.                                                      |
-| **Supabase**            | O "Backend as a Service". Cuida do Banco de Dados (Postgres) e da Autenticação (Auth). |
-| **React Navigation**    | Gerencia as rotas (Stack e Bottom Tabs) para navegar entre as telas.                   |
-| **Context API**         | Usado no `AuthContext` para gerenciar o estado global de login do usuário.             |
-| **React Hook Form + Zod** | Gerencia formulários e validação de dados de forma declarativa.                     |
-| **Expo Vector Icons**   | Biblioteca de ícones para deixar a UI bonitona.                                        |
-
----
-
-## 🏃‍♂️ Rodando o Projeto (Mão na Massa)
-
-Quer rodar esse projeto na sua máquina? Bora lá! Siga os passos abaixo:
-
-### Pré-requisitos
-
-- [Node.js](https://nodejs.org/) instalado.
-- Celular com o app **Expo Go** instalado ou um emulador (Android Studio/Xcode).
-
-### Passo a Passo
-
-1.  **Clone o repositório:**
-
-    ```bash
-    git clone https://github.com/RafaEdu/finance-project.git
-    cd finance-project
-    ```
-
-2.  **Instale as dependências:**
-
-    ```bash
-    npm install
-    # ou se preferir yarn:
-    # yarn install
-    ```
-
-3.  **Configuração do Supabase:**
-    Você precisará criar um projeto no [Supabase](https://supabase.com/) e pegar suas chaves.
-
-    - Crie um arquivo `.env` na raiz do projeto com:
-
-      ```bash
-      EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-      EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon
-      ```
-
-    - O arquivo `.env` **não** é versionado. Nunca comite essas chaves.
-
-4.  **Execute o projeto:**
-
-    ```bash
-    npx expo start
-    ```
-
-5.  **Abra no seu dispositivo:**
-    - Escaneie o QR Code que aparecer no terminal com o app **Expo Go**.
-    - Ou pressione `a` para abrir no emulador Android, ou `i` para o simulador iOS.
-
----
-
-## 📂 Estrutura do Projeto
-
-Para você não se perder nos arquivos:
-
-- `/screens`: Onde ficam as telas do app (Login, Dashboard, Cadastro de Despesas, etc).
-  - Cada tela possui sua lógica (`.js`) e estilização (`.styles.js`) separadas. Clean Code que fala, né? 😉
-- `/context`: Contém o `AuthContext.js`, responsável por saber se o usuário está logado ou não.
-- `/lib`: Configurações de serviços externos, como a conexão com o `supabase.js`.
-- `/services`: Camada de acesso a dados (`tagsService`, `transactionsService`, `authService`, `storageService`).
-  É a **única** pasta que importa o cliente Supabase; toda consulta retorna `{ data, error }`.
-- `/hooks`: Hooks de dados reutilizáveis (`useTags`, `useTransactions`).
-- `/components`: Componentes de UI reutilizáveis (`LoadingView`, `EmptyState`, `Toast`,
-  `AppButton`, `FormField`, `TransactionCard`, `PeriodFilter`, `DateNavigator`, `TagSelector`,
-  `TagPickerModal`, `ColorPicker`). O formulário de receita/despesa é único
-  (`TransactionForm`) e configurado por tipo em `constants/transactions.js`; as telas
-  `AddIncomeScreen` e `AddExpenseScreen` são apenas wrappers.
-- `/utils` e `/constants`: Funções puras compartilhadas e constantes (cores, rotas).
-  `utils/validators.js` concentra os schemas Zod; os formulários usam React Hook Form +
-  Zod (`components/ControlledFormField.js` liga os campos ao formulário).
-- `/supabase/migrations`: Migrations versionadas do banco de dados (arquivos SQL).
-- `App.js`: O ponto de entrada, onde configuramos a navegação principal.
-
-> A consolidação opcional sob `src/` e os ajustes finais estão planejados em
-> [`PLANO_MELHORIA.md`](./PLANO_MELHORIA.md).
-
-### 🗄️ Banco de dados
-
-O schema é versionado em `supabase/migrations/` — nunca edite o banco manualmente. As migrations são
-arquivos SQL aplicados em ordem (SQL Editor do Supabase ou cliente Postgres). Os detalhes e as
-convenções estão em [`PLANO_MELHORIA.md`](./PLANO_MELHORIA.md).
-
-### 🧪 Testes e qualidade
-
-Os testes são unitários (jest + jest-expo) e cobrem a camada pura em `utils/`. Não há testes de
-banco por enquanto.
+Use Node.js 24 e npm. Para Android/iOS, use o ambiente nativo compatível com a versão de Expo do projeto.
 
 ```bash
-npm test              # roda a suíte uma vez
-npm run test:watch    # modo watch
-npm run test:coverage # com cobertura (utils/ e constants/)
-npm run lint          # ESLint
-npm run lint:fix      # ESLint com correção automática
-npm run format        # Prettier (aplica)
-npm run format:check  # Prettier (só verifica)
+git clone https://github.com/RafaEdu/finance-project.git
+cd finance-project
+npm ci
 ```
 
----
+Crie um arquivo `.env` (não versionado):
 
-Feito com 💜 e muito código. Happy Coding! 🚀
+```dotenv
+EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-chave-publica-anon
+```
+
+Estas variáveis são incorporadas ao cliente. Nunca use uma chave `service_role`.
+
+**Antes de usar o Essencial:** aplique as migrations e configure os e-mails OTP conforme [guia de implantação](docs/ESSENCIAL.md). O aplicativo depende da função `finance_query`.
+
+```bash
+npm start
+npm run web
+# Com Android Studio ou Xcode configurado:
+npm run android
+npm run ios
+```
+
+## Qualidade
+
+```bash
+npm run lint
+npm run format:check
+npm test -- --runInBand
+npm run test:regressions
+npm run test:db
+```
+
+O teste de banco usa PostgreSQL local em memória (PGlite), com migrations reais, RLS, dois usuários e mais de 1.000 lançamentos. Não acessa produção.
+
+Para testar os fluxos web com respostas simuladas do Supabase:
+
+```bash
+EXPO_PUBLIC_SUPABASE_URL=https://finance-test.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=test-public-key npm run build:web
+npx playwright install chromium
+npm run test:e2e
+```
+
+As credenciais acima são fictícias e exclusivas dos testes interceptados pelo Playwright. Para distribuir o app, faça um novo build com as variáveis do seu projeto. O workflow de qualidade nunca publica a aplicação.
+
+## Estrutura
+
+- `screens/`: Início, Movimentações, Relatórios, Perfil e autenticação.
+- `components/`: componentes do Essencial e formulário unificado.
+- `constants/theme.js` e `constants/colors.js`: estilos e cores compartilhados.
+- `context/`: sessão, recuperação de senha e privacidade por usuário.
+- `hooks/`: consultas com proteção contra respostas fora de ordem.
+- `services/`: acesso ao Supabase.
+- `supabase/migrations/`: schema, RLS e agregação financeira.
+- `tests/e2e/`, `scripts/` e `__tests__/`: verificações automatizadas.
+
+Veja o [plano e seu status](PLANO_MELHORIA.md) e o [guia do Essencial](docs/ESSENCIAL.md).

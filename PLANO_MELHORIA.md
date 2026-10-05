@@ -1,3 +1,23 @@
+# Plano de melhoria — status do Essencial
+
+Atualizado em 05/10/2026. A direção escolhida foi **Essencial**.
+
+| Etapa | Status nesta implementação |
+|---|---|
+| A — Correções pontuais | Integrada anteriormente no PR #1 |
+| B — Confiabilidade dos dados | Implementados previsto/realizado, RPC, paginação, estados de erro e controle de concorrência |
+| C — Fluxos e integridade | Implementados rascunho preservado, criação idempotente por ID, nova senha dedicada e migration de constraints/FKs |
+| D — Sistema visual | Essencial aplicado com tokens e componentes compartilhados |
+| E — Navegação e telas | Implementadas quatro abas, formulário unificado, detalhes, filtros e relatórios |
+| F — Qualidade e liberação | Testes automatizados e CI adicionados; implantação Supabase, OTP real e homologação Android/iOS pendentes |
+| G — Evoluções opcionais | Tema escuro, orçamentos, metas, exportação e lembretes fora desta entrega |
+
+**Próximos passos para liberação:** seguir [docs/ESSENCIAL.md](docs/ESSENCIAL.md): migration/auditoria em homologação, configuração de OTP, revisão nativa e build de distribuição. Não publicar o novo cliente antes de disponibilizar a RPC.
+
+A análise abaixo é o registro histórico anterior à implementação. Seus itens “restantes” e “pendentes” descrevem aquela revisão; o status atual é o da tabela acima.
+
+---
+
 # Finance App — análise, direção visual e plano de implementação
 
 Data: 02/10/2026. Base analisada: `master`, commit `10e03c5163a3226bb8d8414757db323af56c7a1a`.

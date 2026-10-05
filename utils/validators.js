@@ -3,6 +3,8 @@ import { parseCurrency } from "./currency";
 
 const emailField = z
   .string()
+  .trim()
+  .toLowerCase()
   .min(1, "Informe seu e-mail.")
   .email("E-mail inválido.");
 

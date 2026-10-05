@@ -1,8 +1,7 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import { colors } from "../constants/colors";
-
-// Campo de formulário com label opcional, erro de validação e acessório à direita.
+import { ui } from "../constants/theme";
 export default function FormField({
   label,
   error,
@@ -13,43 +12,39 @@ export default function FormField({
   ...inputProps
 }) {
   return (
-    <View style={[styles.container, containerStyle]}>
-      {!!label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
-      <View style={styles.row}>
+    <View style={[{ gap: 6 }, containerStyle]}>
+      {!!label && <Text style={[ui.label, labelStyle]}>{label}</Text>}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <TextInput
-          style={[styles.input, inputStyle, !!error && styles.inputError]}
+          accessibilityLabel={label || inputProps.placeholder}
           placeholderTextColor={colors.placeholder}
+          style={[
+            {
+              flex: 1,
+              minHeight: 52,
+              borderWidth: 1,
+              borderColor: error ? colors.expense : colors.borderLight,
+              borderRadius: 12,
+              paddingHorizontal: 14,
+              paddingVertical: 12,
+              fontSize: 16,
+              color: colors.text,
+              backgroundColor: colors.surface,
+            },
+            inputStyle,
+          ]}
           {...inputProps}
         />
         {rightAccessory}
       </View>
-      {!!error && <Text style={styles.error}>{error}</Text>}
+      {!!error && (
+        <Text
+          accessibilityRole="alert"
+          style={{ color: colors.expense, fontSize: 13 }}
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {},
-  label: {
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 5,
-    fontWeight: "500",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-  },
-  inputError: {
-    borderColor: colors.expense,
-  },
-  error: {
-    color: colors.expense,
-    fontSize: 12,
-    marginTop: 4,
-  },
-});

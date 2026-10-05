@@ -7,8 +7,8 @@ export default function ErrorState({ onRetry }) {
   return (
     <View style={styles.container}>
       <Text accessibilityRole="alert" style={styles.message}>
-        Não foi possível carregar as movimentações. Verifique sua conexão e tente
-        novamente.
+        Não foi possível carregar as movimentações. Verifique sua conexão e
+        tente novamente.
       </Text>
       <AppButton title="Tentar novamente" onPress={onRetry} />
     </View>

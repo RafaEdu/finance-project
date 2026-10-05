@@ -1,21 +1,6 @@
 import React from "react";
-import {
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { colors } from "../constants/colors";
-
-const VARIANTS = {
-  primary: colors.primary,
-  income: colors.income,
-  expense: colors.expense,
-  danger: colors.expense,
-  neutral: colors.segmentBackground,
-};
-
-// Botão padrão da aplicação. Aceita `variant`, `color` ou `backgroundColor`.
 export default function AppButton({
   title,
   onPress,
@@ -27,44 +12,54 @@ export default function AppButton({
   textStyle,
   ...rest
 }) {
-  const isNeutral = variant === "neutral" && !color;
-  const backgroundColor = disabled
-    ? colors.borderStrong
-    : color || VARIANTS[variant] || VARIANTS.primary;
-
+  const neutral = variant === "neutral";
+  const backgroundColor =
+    color ||
+    (neutral
+      ? colors.segmentBackground
+      : variant === "danger"
+        ? colors.expense
+        : colors.primary);
   return (
     <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
-      style={[styles.button, { backgroundColor }, style]}
+      style={[
+        {
+          minHeight: 48,
+          paddingVertical: 14,
+          paddingHorizontal: 18,
+          borderRadius: 14,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor,
+          opacity: disabled || loading ? 0.6 : 1,
+        },
+        style,
+      ]}
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={colors.white} />
+        <ActivityIndicator color={neutral ? colors.text : colors.white} />
       ) : (
-        <Text style={[styles.text, isNeutral && styles.neutralText, textStyle]}>
+        <Text
+          style={[
+            {
+              color: neutral ? colors.text : colors.white,
+              fontWeight: "600",
+              fontSize: 16,
+              textAlign: "center",
+            },
+            textStyle,
+          ]}
+        >
           {title}
         </Text>
       )}
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  text: {
-    color: colors.white,
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  neutralText: {
-    color: colors.text,
-  },
-});
